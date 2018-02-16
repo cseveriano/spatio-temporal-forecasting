@@ -25,22 +25,28 @@ class MultivariateHighOrderFLRG(flrg.FLRG):
 
     def strLHS(self):
         if len(self.strlhs) == 0:
-            for c in self.LHS:
-                if len(self.strlhs) > 0:
-                    self.strlhs += ", "
-                self.strlhs = self.strlhs + str(c)
+            for lnd, lag in enumerate(self.LHS):
+                if lnd > 0:
+                    self.strlhs += ";"
+                for fnd, factor in enumerate(lag):
+                    if fnd > 0:
+                        self.strlhs += "|"
+                    for ind, fs in enumerate(factor):
+                        if ind > 0:
+                            self.strlhs += ","
+                        self.strlhs += fs.name
         return self.strlhs
 
     def appendLHS(self, c):
         self.LHS.append(c)
 
-    def __str__(self):
-        tmp = ""
-        for c in sorted(self.RHS):
-            if len(tmp) > 0:
-                tmp = tmp + ","
-            tmp = tmp + c
-        return self.strLHS() + " -> " + tmp
+    # def __str__(self):
+    #     tmp = ""
+    #     for c in sorted(self.RHS):
+    #         if len(tmp) > 0:
+    #             tmp = tmp + ","
+    #         tmp = tmp + c
+    #     return self.strLHS() + " -> " + tmp
 
 
     def __len__(self):
@@ -79,22 +85,6 @@ class MultivariateHighOrderFTS(fts.FTS):
         for child in node.getChildren():
             self.build_tree_without_order(child, lags, level + 1)
 
-    def generateFLRG(self, flrs):
-        flrgs = {}
-        l = len(flrs)
-        for k in np.arange(self.order + 1, l):
-            flrg = MultivariateHighOrderFTS(self.order)
-
-            for kk in np.arange(k - self.order, k):
-                flrg.appendLHS(flrs[kk].LHS)
-
-            if flrg.strLHS() in flrgs:
-                flrgs[flrg.strLHS()].appendRHS(flrs[k].RHS)
-            else:
-                flrgs[flrg.strLHS()] = flrg;
-                flrgs[flrg.strLHS()].appendRHS(flrs[k].RHS)
-        return (flrgs)
-
     def generate_flrg(self, data):
         flrgs = {}
 
@@ -112,9 +102,10 @@ class MultivariateHighOrderFTS(fts.FTS):
 
             lags = []
 
-            for o in range(k - self.order, k):
 
-                lhs = [set for set in main_fs if set.membership(main_factor[o]) > 0.0]
+            for o in range(k - self.order, k):
+                lhs = []
+                lhs.append([set for set in main_fs if set.membership(main_factor[o]) > 0.0])
 
                 for c in range(1,len(data.columns)):
                     sec_key = data.columns[c]
@@ -124,23 +115,31 @@ class MultivariateHighOrderFTS(fts.FTS):
 
                 lags.append(lhs)
 
-            root = tree.FLRGTreeNode(None)
+            flrg = MultivariateHighOrderFLRG(self.order)
+            flrg.LHS = lags
+            lhs_key = flrg.strLHS()
 
-            self.build_tree_without_order(root, lags, 0)
+            if lhs_key not in flrgs:
+                flrgs[lhs_key] = flrg
 
-            # Trace the possible paths
-            for p in root.paths():
-                flrg = MultivariateHighOrderFTS(self.order)
-                path = list(reversed(list(filter(None.__ne__, p))))
-
-                for lhs in enumerate(path, start=0):
-                    flrg.appendLHS(lhs)
-
-                if flrg.strLHS() not in flrgs:
-                    flrgs[flrg.strLHS()] = flrg;
-
-                for st in rhs:
-                    flrgs[flrg.strLHS()].appendRHS(st)
+            flrgs[lhs_key].appendLHS(rhs)
+            # root = tree.FLRGTreeNode(None)
+            #
+            # self.build_tree_without_order(root, lags, 0)
+            #
+            # # Trace the possible paths
+            # for p in root.paths():
+            #     flrg = MultivariateHighOrderFTS(self.order)
+            #     path = list(reversed(list(filter(None.__ne__, p))))
+            #
+            #     for lhs in enumerate(path, start=0):
+            #         flrg.appendLHS(lhs)
+            #
+            #     if flrg.strLHS() not in flrgs:
+            #         flrgs[flrg.strLHS()] = flrg;
+            #
+            #     for st in rhs:
+            #         flrgs[flrg.strLHS()].appendRHS(st)
 
         return flrgs
 
@@ -176,7 +175,7 @@ class MultivariateHighOrderFTS(fts.FTS):
 
         for k in np.arange(self.order, l+1):
             tmpdata = FuzzySet.fuzzySeries(ndata[k - self.order: k], self.sets)
-            tmpflrg = MultivariateHighOrderFTS(self.order)
+            tmpflrg = MultivariateHighOrderFLRG(self.order)
 
             for s in tmpdata: tmpflrg.appendLHS(s)
 
