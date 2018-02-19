@@ -11,6 +11,7 @@ from pyFTS.common import FuzzySet,FLR
 from pyFTS import fts, flrg, tree
 
 
+
 class MultivariateHighOrderFLRG(flrg.FLRG):
     """Conventional High Order Fuzzy Logical Relationship Group"""
     def __init__(self, order, **kwargs):
@@ -95,6 +96,8 @@ class MultivariateHighOrderFTS(fts.FTS):
         l = len(main_factor)
         for k in np.arange(self.order, l):
 
+            print("Training: instance "+str(k)+ " of "+str(l))
+
             if self.dump: print("FLR: " + str(k))
 
             # Get RHS
@@ -122,7 +125,9 @@ class MultivariateHighOrderFTS(fts.FTS):
             if lhs_key not in flrgs:
                 flrgs[lhs_key] = flrg
 
-            flrgs[lhs_key].appendLHS(rhs)
+            for st in rhs:
+                flrgs[lhs_key].appendRHS(st)
+
             # root = tree.FLRGTreeNode(None)
             #
             # self.build_tree_without_order(root, lags, 0)
@@ -145,7 +150,7 @@ class MultivariateHighOrderFTS(fts.FTS):
 
     def train(self, data, sets, order=1,parameters=None):
 
-        #data = self.doTransformations(data, updateUoD=True)
+#        data = self.doTransformations(data, updateUoD=True)
 
         self.order = order
         columns = data.columns
@@ -165,26 +170,44 @@ class MultivariateHighOrderFTS(fts.FTS):
     def forecast(self, data, **kwargs):
 
         ret = []
+        main_factor = data.ix[:, 0].values
+        main_key = data.columns[0]
+        main_fs = list(self.fuzzySetsDict[main_key].values())
 
-        l = len(data)
+        l = len(main_factor)
 
         if l <= self.order:
             return data
 
-        ndata = self.doTransformations(data)
+ #       ndata = self.doTransformations(data)
 
         for k in np.arange(self.order, l+1):
-            tmpdata = FuzzySet.fuzzySeries(ndata[k - self.order: k], self.sets)
-            tmpflrg = MultivariateHighOrderFLRG(self.order)
 
-            for s in tmpdata: tmpflrg.appendLHS(s)
+            lags = []
+            print("Forecasting: instance " + str(k) + " of " + str(l))
+
+            for o in range(k - self.order, k):
+                lhs = []
+                lhs.append([FuzzySet.getMaxMembershipFuzzySet(main_factor[o], main_fs)])
+
+
+                for c in range(1,len(data.columns)):
+                    sec_key = data.columns[c]
+                    sec_factor = data.ix[:,sec_key].values
+                    sec_fs = list(self.fuzzySetsDict[sec_key].values())
+                    lhs.append([FuzzySet.getMaxMembershipFuzzySet(sec_factor[o], sec_fs)])
+
+                lags.append(lhs)
+
+            tmpflrg = MultivariateHighOrderFLRG(self.order)
+            tmpflrg.LHS = lags
 
             if tmpflrg.strLHS() not in self.flrgs:
-                ret.append(tmpdata[-1].centroid)
+                ret.append(tmpflrg.LHS[-1][0][0].centroid)
             else:
                 flrg = self.flrgs[tmpflrg.strLHS()]
                 ret.append(flrg.get_midpoint())
 
-        ret = self.doInverseTransformations(ret, params=[data[self.order-1:]])
+        #ret = self.doInverseTransformations(ret, params=[data[self.order-1:]])
 
         return ret
