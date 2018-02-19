@@ -44,6 +44,5 @@ data_test = pd.DataFrame(dt)
 
 ret = obj.forecast(data_test)
 
-print("RMSE: " + Measures.rmse(data_test.fln_glo_avg.to_list()[6:], ret))
-
+print("RMSE: " + str(Measures.rmse(list(data_test.fln_glo_avg[6:]), ret[:-1])))
 #print(mvhofts)
