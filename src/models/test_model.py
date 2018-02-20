@@ -23,26 +23,33 @@ from pyFTS.common import FuzzySet,Membership, Transformations
 
 from pyFTS.partitioners import Grid, CMeans, Grid, FCM, Huarng, Util, Entropy
 
+order = 3
+nparts = 20
+
 fuzzysets = []
-fuzzysets.append(Grid.GridPartitioner(fln_train.glo_avg,10))
-fuzzysets.append(Grid.GridPartitioner(joi_train.glo_avg,10))
-fuzzysets.append(Grid.GridPartitioner(sbr_train.glo_avg,10))
+fuzzysets.append(Grid.GridPartitioner(fln_train.glo_avg,nparts))
+fuzzysets.append(Grid.GridPartitioner(joi_train.glo_avg,nparts))
+fuzzysets.append(Grid.GridPartitioner(sbr_train.glo_avg,nparts))
 
 d = {'fln_glo_avg':fln_train.glo_avg,'sbr_glo_avg':sbr_train.glo_avg,'joi_glo_avg':joi_train.glo_avg}
-data = pd.DataFrame(d)
+data_train = pd.DataFrame(d)
+data_train = data_train.dropna(axis=0, how='any')
 
-model_file = "models/fts/multivariate/mvhofts-6-3.pkl"
+model_file = "models/fts/multivariate/mvhofts-"+str(order)+"-"+str(nparts)+".pkl"
 
-'''''''''
+
+
 mvhofts = mvhofts.MultivariateHighOrderFTS("")
-mvhofts.train(data,fuzzysets,6)
+mvhofts.train(data_train,fuzzysets,order)
 cUtil.persist_obj(mvhofts, model_file)
-'''''''''
+
+
 obj = cUtil.load_obj(model_file)
 dt = {'fln_glo_avg':fln_test.glo_avg,'sbr_glo_avg':sbr_test.glo_avg,'joi_glo_avg':joi_test.glo_avg}
 data_test = pd.DataFrame(dt)
+data_test = data_test.dropna(axis=0, how='any')
 
 ret = obj.forecast(data_test)
 
-print("RMSE: " + str(Measures.rmse(list(data_test.fln_glo_avg[6:]), ret[:-1])))
+print("RMSE: " + str(Measures.rmse(list(data_test.fln_glo_avg[order:]), ret[:-1])))
 #print(mvhofts)

@@ -89,9 +89,9 @@ class MultivariateHighOrderFTS(fts.FTS):
     def generate_flrg(self, data):
         flrgs = {}
 
-        main_factor = data.ix[:, 0]
+        main_factor = data.ix[:, 0].values
         main_key = data.columns[0]
-        main_fs = self.fuzzySetsDict[main_key].values()
+        main_fs = list(self.fuzzySetsDict[main_key].values())
 
         l = len(main_factor)
         for k in np.arange(self.order, l):
@@ -112,8 +112,8 @@ class MultivariateHighOrderFTS(fts.FTS):
 
                 for c in range(1,len(data.columns)):
                     sec_key = data.columns[c]
-                    sec_factor = data.ix[:,sec_key]
-                    sec_fs = self.fuzzySetsDict[sec_key].values()
+                    sec_factor = data.ix[:,sec_key].values
+                    sec_fs = list(self.fuzzySetsDict[sec_key].values())
                     lhs.append([set for set in sec_fs if set.membership(sec_factor[o]) > 0.0])
 
                 lags.append(lhs)
@@ -188,14 +188,16 @@ class MultivariateHighOrderFTS(fts.FTS):
 
             for o in range(k - self.order, k):
                 lhs = []
-                lhs.append([FuzzySet.getMaxMembershipFuzzySet(main_factor[o], main_fs)])
+                lhs.append([set for set in main_fs if set.membership(main_factor[o]) > 0.0])
+                #lhs.append([FuzzySet.getMaxMembershipFuzzySet(main_factor[o], main_fs)])
 
 
                 for c in range(1,len(data.columns)):
                     sec_key = data.columns[c]
                     sec_factor = data.ix[:,sec_key].values
                     sec_fs = list(self.fuzzySetsDict[sec_key].values())
-                    lhs.append([FuzzySet.getMaxMembershipFuzzySet(sec_factor[o], sec_fs)])
+                    lhs.append([set for set in sec_fs if set.membership(sec_factor[o]) > 0.0])
+                    #lhs.append([FuzzySet.getMaxMembershipFuzzySet(sec_factor[o], sec_fs)])
 
                 lags.append(lhs)
 
