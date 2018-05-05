@@ -12,22 +12,22 @@ from pyFTS.partitioners import partitioner
 # S. T. Li, Y. C. Cheng, and S. Y. Lin, “A FCM-based deterministic forecasting model for fuzzy time series,”
 # Comput. Math. Appl., vol. 56, no. 12, pp. 3052–3063, Dec. 2008. DOI: 10.1016/j.camwa.2008.07.033.
 
-def fuzzy_distance(x, y):
-    if isinstance(x, list):
-        tmp = functools.reduce(operator.add, [(x[k] - y[k]) ** 2 for k in range(0, len(x))])
-    else:
-        tmp = (x - y) ** 2
-    return math.sqrt(tmp)
+# def fuzzy_distance(x, y):
+#     if isinstance(x, list):
+#         tmp = functools.reduce(operator.add, [(x[k] - y[k]) ** 2 for k in range(0, len(x))])
+#     else:
+#         tmp = (x - y) ** 2
+#     return math.sqrt(tmp)
 
 
-def membership(val, vals):
-    soma = 0
-    for k in vals:
-        if k == 0:
-            k = 1
-        soma = soma + (val / k) ** 2
-
-    return soma
+# def membership(val, vals):
+#     soma = 0
+#     for k in vals:
+#         if k == 0:
+#             k = 1
+#         soma = soma + (val / k) ** 2
+#
+#     return soma
 
 
 def fuzzy_c_means(k, d, m, deltadist=0.001):
@@ -132,16 +132,26 @@ class AugmentedFCMPartitioner(partitioner.Partitioner):
 
     def __init__(self, **kwargs):
         super(AugmentedFCMPartitioner, self).__init__(name="AugmentedFCM", **kwargs)
+        self.m = kwargs.get('m', 1)
+        self.deltadist = kwargs.get('deltadist', 0.001)
 
     def build(self, data):
         sets = {}
 
-        centroids = fuzzy_c_means(self.partitions, data, 1, 2)
-        centroids.append(self.max)
-        centroids.append(self.min)
-        centroids = list(set(centroids))
-        centroids.sort()
-        for c in np.arange(1, len(centroids) - 1):
+        centroids = fuzzy_c_means(self.partitions, data,self.m, self.deltadist)
+        # centroids.append(self.max)
+        # centroids.append(self.min)
+        # centroids = list(set(centroids))
+        # centroids.sort()
+
+        c_index = 0
+        for ind, cent in centroids.iterrows():
+            _name = "C" + c_index
+            sets[_name] = FCMFuzzySet.FuzzySet(_name, Membership.trimf,
+                                                [round(centroids[c - 1], 3), round(centroids[c], 3),
+                                                 round(centroids[c + 1], 3)],
+                                                round(centroids[c], 3))
+    for c in np.arange(1, len(centroids) - 1):
             _name = self.get_name(c)
             if self.membership_function == Membership.trimf:
                 sets[_name] = FuzzySet.FuzzySet(_name, Membership.trimf,
@@ -156,4 +166,3 @@ class AugmentedFCMPartitioner(partitioner.Partitioner):
                                                  round(centroids[c], 3) + q2, round(centroids[c + 1], 3)],
                                                 round(centroids[c], 3))
 
-        return sets
