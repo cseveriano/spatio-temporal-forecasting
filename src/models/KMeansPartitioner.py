@@ -18,7 +18,38 @@ class KMeansPartitioner(partitioner.Partitioner):
         data = kwargs.get('data', [None])
         self.sets = self.build(data)
 
-        self.ordered_sets = self.sets.keys()
+        self.ordered_sets = list(self.sets.keys())
+
+    ## OLD COMPOSITE
+    # def build(self, data):
+    #     sets = {}
+    #
+    #     clusterer = MiniBatchKMeans(init='k-means++', n_clusters=self.partitions, batch_size=self.batch_size, init_size=self.init_size,
+    #                                 n_init=1, verbose=False)
+    #     data_labels = clusterer.fit_predict(data)
+    #     centroids = clusterer.cluster_centers_
+    #
+    #
+    #     label_ind = 0
+    #
+    #     for c in centroids:
+    #         _name = "C"+str(label_ind)
+    #         composite = ClusterFuzzySet.FuzzySet(_name)
+    #
+    #         for i in np.arange(len(c)):
+    #             mean = c[i]
+    #             label_values = list(zip(*data[data_labels == label_ind]))[i]
+    #             var = np.var(label_values)
+    #             lower = min(label_values)
+    #             upper = max(label_values)
+    #             composite.append(ClusterMembership.trunc_gaussmf, [mean,var,lower,upper,i])
+    #
+    #
+    #         sets[_name] = composite
+    #
+    #         label_ind += 1
+    #
+    #     return sets
 
 
     def build(self, data):
@@ -34,21 +65,9 @@ class KMeansPartitioner(partitioner.Partitioner):
 
         for c in centroids:
             _name = "C"+str(label_ind)
-            composite = ClusterFuzzySet.FuzzySet(_name)
 
-            for i in np.arange(len(c)):
-                mean = c[i]
-                label_values = list(zip(*data[data_labels == label_ind]))[i]
-                var = np.var(label_values)
-                lower = min(label_values)
-                upper = max(label_values)
-                composite.append(ClusterMembership.trunc_gaussmf, [mean,var,lower,upper,i])
-
-
-            sets[_name] = composite
-
+            fs = FuzzySet.FuzzySet(_name,ClusterMembership.weighted_distance, [centroids,label_ind],c)
+            sets[_name] = fs
             label_ind += 1
 
         return sets
-
-
