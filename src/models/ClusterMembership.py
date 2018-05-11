@@ -1,4 +1,5 @@
 import math
+import numpy as np
 
 def trunc_gaussmf(x, parameters):
     """
@@ -28,11 +29,13 @@ def weighted_distance(x, parameters):
 
     n_clusters = len(centroids)
 
-    dists = []
+    dists = np.zeros(n_clusters)
+    i = 0
 
     # Distance between instances and centroids
     for centroid in centroids:
-        dists.append(distance(x, centroid))
+        dists[i] = distance(x, centroid)
+        i += 1
 
     # Update membership function
     return calculate_membership(dists[cent_ind], dists, m)

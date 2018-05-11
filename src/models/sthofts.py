@@ -35,13 +35,14 @@ class SpatioTemporalHighOrderFLRG(flrg.FLRG):
 class SpatioTemporalHighOrderFTS(fts.FTS):
     """Conventional High Order Fuzzy Time Series"""
     def __init__(self, name, **kwargs):
-        super(SpatioTemporalHighOrderFTS, self).__init__(1, name="STHOFTS" + name, **kwargs)
+
+        super(SpatioTemporalHighOrderFTS, self).__init__(kwargs.get('nlags',1), name="STHOFTS" + name, **kwargs)
         self.name = "Spatio Temporal High Order FTS"
         self.shortname = "STHOFTS" + name
         self.detail = "Severiano"
-        self.order = kwargs.get('order',1)
         self.setsDict = {}
         self.is_high_order = True
+        self.membership_threshold = kwargs.get('membership_threshold',0.6)
 
     def generate_lhs_flrg(self, sample):
         lags = {}
@@ -89,25 +90,25 @@ class SpatioTemporalHighOrderFTS(fts.FTS):
 
 
     def fuzzyfication(self, x):
-        memberships = []
+        memberships = np.zeros(len(self.partitioner.ordered_sets))
+        i = 0
         fuzzy_sequence = []
         for key in self.partitioner.ordered_sets:
-            memberships.append(self.sets[key].membership(x))
+            memberships[i] = self.sets[key].membership(x)
+            i += 1
         # sorting memberships
         descending = np.argsort(memberships)[::-1]
         total_membership = 0
-        membership_threshold = 0.6
+
         for mb in descending:
             total_membership += memberships[mb]
-            if total_membership <= membership_threshold:
+            if total_membership <= self.membership_threshold:
                 fuzzy_sequence.append(list(self.partitioner.ordered_sets)[mb])
             else:
                 break
         return fuzzy_sequence
 
     def train(self, data, **kwargs):
-
-        self.order = kwargs.get('order',2)
 
         if kwargs.get('sets', None) is not None:
             self.sets = kwargs.get('sets', None)

@@ -29,20 +29,32 @@ train = min_max_scaler.fit_transform(train)
 test = test_df.values
 test = min_max_scaler.fit_transform(test)
 
-k = 20
+k = 4
 
 fuzzy_sets = KMeansPartitioner.KMeansPartitioner(data=train, npart=k, batch_size=1000, init_size=k*3)
 
 
-_order = 6
+_order = 2
 
-model_hofts = sthofts.SpatioTemporalHighOrderFTS("FTS", partitioner=fuzzy_sets)
-#model_hofts.fit(train, order=_order, dump = 'time', num_batches=10)
-#model_hofts.fit(train, order=_order, dump = 'time', num_batches=100, distributed=True, nodes=['192.168.1.3','192.168.1.8'])
-model_hofts.fit(train, order=_order, dump = 'time', num_batches=1000, distributed=True, nodes=['192.168.1.3'])
+import cProfile
+
+
+model_hofts = sthofts.SpatioTemporalHighOrderFTS("FTS", nlags=_order, partitioner=fuzzy_sets)
+
+cProfile.run('model_hofts.fit(train, dump = \'time\', num_batches=100)', 'modelfit.profile')
+
+import pstats
+stats = pstats.Stats('modelfit.profile')
+stats.strip_dirs().sort_stats('time').print_stats()
+
+#model_hofts.fit(train, dump = 'time', num_batches=100)
+#model_hofts.fit(train, dump = 'time', num_batches=100, distributed=True, nodes=['192.168.1.3','192.168.1.8'])
+#model_hofts.fit(train, dump = 'time', num_batches=100, distributed=True, nodes=['192.168.1.3'])
 
 
 forecast_hofts = model_hofts.predict(test)
+
+
 _nrmse = normalized_rmse(test.tolist()[(_order - 1):], forecast_hofts)
 print("nRMSE: ", _nrmse, "\n")
 
