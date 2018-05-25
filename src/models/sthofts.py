@@ -101,11 +101,13 @@ class SpatioTemporalHighOrderFTS(fts.FTS):
         total_membership = 0
 
         for mb in descending:
-            total_membership += memberships[mb]
             if total_membership <= self.membership_threshold:
                 fuzzy_sequence.append(list(self.partitioner.ordered_sets)[mb])
             else:
                 break
+
+            total_membership += memberships[mb]
+
         return fuzzy_sequence
 
     def train(self, data, **kwargs):
@@ -133,13 +135,13 @@ class SpatioTemporalHighOrderFTS(fts.FTS):
                 if flrg.get_key() not in self.flrgs:
                     tmp.append(self.sets[flrg.LHS[-1]].centroid)
                 else:
-                    flrg = self.flrgs[flrg.get_key()]
+                    f = self.flrgs[flrg.get_key()]
 
                     # TODO: refactoring - include this code in FLRG.py (or a subclass)
-                    if flrg.midpoint is None:
-                        flrg.midpoint = np.nanmean(flrg.get_midpoints(self.sets), axis=0)
+                    if f.midpoint is None:
+                        f.midpoint = np.nanmean(f.get_midpoints(self.sets), axis=0)
 
-                    tmp.append(flrg.get_midpoint(self.sets))
+                    tmp.append(f.get_midpoint(self.sets))
 
             ret.append(np.nanmean(tmp, axis=0))
 
