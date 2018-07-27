@@ -34,15 +34,16 @@ class SpatioTemporalHighOrderFLRG(flrg.FLRG):
 
 class SpatioTemporalHighOrderFTS(fts.FTS):
     """Conventional High Order Fuzzy Time Series"""
-    def __init__(self, name, **kwargs):
+    def __init__(self, **kwargs):
 
-        super(SpatioTemporalHighOrderFTS, self).__init__(kwargs.get('nlags',1), name="STHOFTS" + name, **kwargs)
+        super(SpatioTemporalHighOrderFTS, self).__init__( **kwargs)
         self.name = "Spatio Temporal High Order FTS"
-        self.shortname = "STHOFTS" + name
+        self.shortname = "STHOFTS"
         self.detail = "Severiano"
         self.setsDict = {}
         self.is_high_order = True
         self.membership_threshold = kwargs.get('membership_threshold',0.6)
+
 
     def generate_lhs_flrg(self, sample):
         lags = {}
