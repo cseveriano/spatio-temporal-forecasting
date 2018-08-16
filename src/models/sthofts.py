@@ -84,7 +84,7 @@ class SpatioTemporalHighOrderFTS(fts.FTS):
 
             for flrg in flrgs:
                 if flrg.get_key() not in self.flrgs:
-                    self.flrgs[flrg.get_key()] = flrg;
+                    self.flrgs[flrg.get_key()] = flrg
 
                 for st in rhs:
                     self.flrgs[flrg.get_key()].append_rhs(st)
@@ -119,7 +119,7 @@ class SpatioTemporalHighOrderFTS(fts.FTS):
         self.generate_flrg(data)
 
     def forecast(self, ndata, **kwargs):
-
+        print("New forecast with membership")
         ret = []
 
         l = len(ndata)
@@ -128,22 +128,31 @@ class SpatioTemporalHighOrderFTS(fts.FTS):
             return ndata
 
         for k in np.arange(self.order, l+1):
-            flrgs = self.generate_lhs_flrg(ndata[k - self.order: k])
+            sample = ndata[k - self.order: k]
+            flrgs = self.generate_lhs_flrg(sample)
 
-            tmp = []
+            memberships = []
+            midpoints = []
 
             for flrg in flrgs:
                 if flrg.get_key() not in self.flrgs:
-                    tmp.append(self.sets[flrg.LHS[-1]].centroid)
+                    midpoints.append(self.sets[flrg.LHS[-1]].centroid)
                 else:
                     f = self.flrgs[flrg.get_key()]
 
-                    # TODO: refactoring - include this code in FLRG.py (or a subclass)
                     if f.midpoint is None:
                         f.midpoint = np.nanmean(f.get_midpoints(self.sets), axis=0)
 
-                    tmp.append(f.get_midpoint(self.sets))
+                    midpoints.append(f.get_midpoint(self.sets))
 
-            ret.append(np.nanmean(tmp, axis=0))
+                mvs = []
+                for i in np.arange(self.order):
+                    mvs.append(self.sets[flrg.LHS[i]].membership(sample[i]))
+
+                memberships.append(np.prod(mvs))
+
+
+            mv_midps = [x * y for x, y in zip(midpoints, memberships)]
+            ret.append(np.sum(mv_midps, axis=0)/np.sum(memberships))
 
         return ret
