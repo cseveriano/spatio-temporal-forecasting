@@ -2,12 +2,9 @@ from sklearn.cluster import MeanShift, estimate_bandwidth
 
 import pandas as pd
 import numpy as np
-from models import KMeansPartitioner
+from clusteredmvfts.partitioner import KMeansPartitioner
 from sklearn import preprocessing
-from pyFTS.partitioners import Grid, Util as pUtil
-from pyFTS.models import hofts
-
-from models import sthofts
+from clusteredmvfts.fts import cmvhofts
 
 def normalized_rmse(targets, forecasts):
     dist = [(a - b) ** 2 for a, b in zip(targets, forecasts)]
@@ -39,7 +36,7 @@ _order = 2
 import cProfile
 
 
-model_hofts = sthofts.SpatioTemporalHighOrderFTS("FTS", nlags=_order, partitioner=fuzzy_sets)
+model_hofts = cmvhofts.ClusteredMultivariateHighOrderFTS("FTS", nlags=_order, partitioner=fuzzy_sets)
 
 cProfile.run('model_hofts.fit(train, dump = \'time\', num_batches=100)', 'modelfit.profile')
 

@@ -1,6 +1,6 @@
 import pandas as pd
 import os
-import mvhofts
+from clusteredmvfts.fts import mvhofts
 from pyFTS.common import Util as cUtil
 from pyFTS.benchmarks import Measures
 
@@ -18,10 +18,7 @@ sbr_df = pd.read_csv('data/processed/SONDA/SBR-15min.csv', sep=";")
 sbr_train = sbr_df[(sbr_df.date >= '2013-11-01') & (sbr_df.date <= '2014-10-31')]
 sbr_test = sbr_df[(sbr_df.date >= '2014-11-01') & (sbr_df.date <= '2015-10-31')]
 
-
-from pyFTS.common import FuzzySet,Membership, Transformations
-
-from pyFTS.partitioners import Grid, CMeans, Grid, FCM, Huarng, Util, Entropy
+from pyFTS.partitioners import Grid
 
 order = 3
 nparts = 20

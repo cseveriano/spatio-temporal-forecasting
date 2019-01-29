@@ -7,8 +7,7 @@ IEEE Transactions on Fuzzy Systems, 14(3), 468–477.
 """
 
 import numpy as np
-from pyFTS.common import FuzzySet,FLR
-from pyFTS import fts, flrg, tree
+from pyFTS.common import fts, flrg, tree
 
 
 

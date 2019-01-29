@@ -2,12 +2,12 @@
 """
 
 import numpy as np
-from pyFTS.common import FuzzySet, FLR, fts, flrg, tree
+from pyFTS.common import fts, flrg, tree
 
-class SpatioTemporalHighOrderFLRG(flrg.FLRG):
+class ClusteredMultivariateHighOrderFLRG(flrg.FLRG):
     """Conventional High Order Fuzzy Logical Relationship Group"""
     def __init__(self, order, **kwargs):
-        super(SpatioTemporalHighOrderFLRG, self).__init__(order, **kwargs)
+        super(ClusteredMultivariateHighOrderFLRG, self).__init__(order, **kwargs)
         self.LHS = []
         self.RHS = {}
         self.strlhs = ""
@@ -32,13 +32,13 @@ class SpatioTemporalHighOrderFLRG(flrg.FLRG):
         return len(self.RHS)
 
 
-class SpatioTemporalHighOrderFTS(fts.FTS):
+class ClusteredMultivariateHighOrderFTS(fts.FTS):
     """Conventional High Order Fuzzy Time Series"""
     def __init__(self, **kwargs):
 
-        super(SpatioTemporalHighOrderFTS, self).__init__( **kwargs)
-        self.name = "Spatio Temporal High Order FTS"
-        self.shortname = "STHOFTS"
+        super(ClusteredMultivariateHighOrderFTS, self).__init__( **kwargs)
+        self.name = "Clustered Multivariate High Order FTS"
+        self.shortname = "CMVFTS"
         self.detail = "Severiano"
         self.setsDict = {}
         self.is_high_order = True
@@ -60,7 +60,7 @@ class SpatioTemporalHighOrderFTS(fts.FTS):
 
         # Trace the possible paths
         for p in root.paths():
-            flrg = SpatioTemporalHighOrderFLRG(self.order)
+            flrg = ClusteredMultivariateHighOrderFLRG(self.order)
             path = list(reversed(list(filter(None.__ne__, p))))
 
             for lhs in path:
@@ -152,7 +152,8 @@ class SpatioTemporalHighOrderFTS(fts.FTS):
                 memberships.append(np.prod(mvs))
 
 
-            mv_midps = [x * y for x, y in zip(midpoints, memberships)]
-            ret.append(np.sum(mv_midps, axis=0)/np.sum(memberships))
+            # mv_midps = [x * y for x, y in zip(midpoints, memberships)]
+            # ret.append(np.sum(mv_midps, axis=0)/np.sum(memberships))
+            ret.append(np.nanmean(midpoints, axis=0))
 
         return ret
