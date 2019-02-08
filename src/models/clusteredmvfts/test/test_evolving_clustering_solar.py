@@ -42,53 +42,56 @@ def split_data(df, interval):
 
     return (train_df, validation_df, test_df)
 
-multichannel = ['WTG01_Speed', 'WTG01_Power']
-output = 'WTG01_Speed'
 
-neighbor_stations_90 = ['WTG01_Speed','WTG02_Speed','WTG03_Speed','WTG05_Speed','WTG06_Speed']
+#####
 
-one_station = ['WTG01_Speed']
+#Set target and input variables
+target_station = 'DHHL_3'
 
-all_stations = ['WTG01_Speed', 'WTG02_Speed', 'WTG03_Speed', 'WTG04_Speed', 'WTG05_Speed',
-'WTG06_Speed', 'WTG07_Speed', 'WTG08_Speed', 'WTG09_Speed', 'WTG10_Speed',
-'WTG11_Speed', 'WTG12_Speed', 'WTG13_Speed', 'WTG24_Speed', 'WTG25_Speed']
+two_stations = ['DHHL_3',  'DHHL_4']
 
-wind_time = ['WTG01_Speed', 'Daily_Cycle']
+#All neighbor stations with residual correlation greater than .90
+neighbor_stations_90 = ['DHHL_3',  'DHHL_4','DHHL_5','DHHL_10','DHHL_11','DHHL_9','DHHL_2', 'DHHL_6','DHHL_7','DHHL_8']
 
-two_stations = ['WTG01_Speed', 'WTG02_Speed']
-
-# input = neighbor_stations_90
-#input = one_station
 input = two_stations
+output = target_station
 
+df = pd.read_pickle(os.path.join(os.getcwd(), "../notebooks/df_oahu.pkl"))
 
-df = pd.read_pickle(os.path.join(os.getcwd(), "../notebooks/df_wind_total.pkl"))
-
-
-# Add Time (minutes) attribute
-df['Daily_Cycle'] = [t.hour * 60 + t.minute for t in df.index.time]
+## Remove columns with many corrupted or missing values
+df.drop(columns=['AP_1', 'AP_7'], inplace=True)
 
 #Normalize Data
+
+# Save Min-Max for Denorm
+min_raw = df[target_station].min()
+
+max_raw = df[target_station].max()
 
 # Perform Normalization
 norm_df = normalize(df)
 
 # Split data
-interval = ((df.index >= '2017-05') & (df.index <= '2017-06'))
+interval = ((df.index >= '2010-06') & (df.index < '2010-07'))
+#interval = ((df.index >= '2010-11') & (df.index <= '2010-12'))
 
 (train_df, validation_df, test_df) = split_data(df, interval)
 (norm_train_df, norm_validation_df, norm_test_df) = split_data(norm_df, interval)
+
+
+
+#####
 
 
 def evol_cluster_forecast(train_df, test_df):
 
     fuzzy_sets = EvolvingClusteringPartitioner.EvolvingClusteringPartitioner(data=train_df, variance_limit=0.001, debug=True)
 
-    model = cmvhofts.ClusteredMultivariateHighOrderFTS("FTS", nlags=_order, partitioner=fuzzy_sets)
+    model = cmvhofts.ClusteredMultivariateHighOrderFTS()
 
-    model.fit(train_df, verbose = False)
+    model.fit(train_df.values, order=_order, partitioner=fuzzy_sets, verbose = False)
 
-    forecast = model.predict(test_df)
+    forecast = model.predict(test_df.values)
 
     return forecast
 

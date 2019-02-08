@@ -1,7 +1,6 @@
-from pyFTS.common import FuzzySet
 from pyFTS.partitioners import partitioner
 from evolving import EvolvingClustering
-
+from clusteredmvfts.partitioner import FuzzySet
 class EvolvingClusteringPartitioner(partitioner.Partitioner):
 
     def __init__(self, **kwargs):
@@ -19,11 +18,11 @@ class EvolvingClusteringPartitioner(partitioner.Partitioner):
 
     def build(self, data):
         sets = {}
-        clusterer = EvolvingClustering.EvolvingClustering(variance_limit=self.variance_limit, debug=self.debug)
+        clusterer = EvolvingClustering.EvolvingClustering(variance_limit=self.variance_limit, debug=self.debug, plot_graph=True)
 
         clusterer.fit(data.values)
 
-        macro_clusters = clusterer.macro_clusters
+        macro_clusters = clusterer.active_macro_clusters
 
 
         label_ind = 0
@@ -32,9 +31,21 @@ class EvolvingClusteringPartitioner(partitioner.Partitioner):
             _name = "C"+str(label_ind)
 
             active_micro_clusters = clusterer.get_active_micro_clusters(mc)
-            fs = FuzzySet.FuzzySet(_name,EvolvingClustering.calculate_membership, active_micro_clusters,mc)
+
+            centroid = EvolvingClusteringPartitioner.get_macro_cluster_centroid(active_micro_clusters)
+            fs = FuzzySet.FuzzySet(_name,EvolvingClustering.EvolvingClustering.calculate_membership, active_micro_clusters,centroid)
 
             sets[_name] = fs
             label_ind += 1
 
         return sets
+
+    @staticmethod
+    def get_macro_cluster_centroid(micro_clusters):
+
+        centroid = [0] * len(micro_clusters[0]["mean"])
+
+        for m in micro_clusters:
+            centroid += m["mean"]
+
+        return centroid / len(micro_clusters)
