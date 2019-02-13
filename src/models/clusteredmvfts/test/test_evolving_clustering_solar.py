@@ -87,19 +87,20 @@ def evol_cluster_forecast(train_df, test_df):
 
     fuzzy_sets = EvolvingClusteringPartitioner.EvolvingClusteringPartitioner(data=train_df, variance_limit=0.001, debug=True)
 
-    model = cmvhofts.ClusteredMultivariateHighOrderFTS()
+    model = cmvhofts.ClusteredMultivariateHighOrderFTS(t_norm='nonzero')
 
     model.fit(train_df.values, order=_order, partitioner=fuzzy_sets, verbose = False)
 
     forecast = model.predict(test_df.values)
-
-    return forecast
+    forecast_df = pd.DataFrame(data=forecast, columns=test_df.columns)
+    return forecast_df
 
 steps = 1
 _order = 2
 
 forecast = evol_cluster_forecast(norm_train_df[input], norm_validation_df[input])
-forecast = denormalize(forecast, df[output])
+
+forecast = denormalize(forecast[output], df[output])
 
 rmse = calculate_rmse(validation_df[output], forecast, _order, steps)
 print("RMSE: ", rmse)

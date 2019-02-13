@@ -16,24 +16,47 @@ class EvolvingClusteringPartitioner(partitioner.Partitioner):
         self.ordered_sets = list(self.sets.keys())
 
 
+    # def build(self, data):
+    #     sets = {}
+    #     clusterer = EvolvingClustering.EvolvingClustering(variance_limit=self.variance_limit, debug=self.debug, plot_graph=True)
+    #
+    #     clusterer.fit(data.values)
+    #
+    #     macro_clusters = clusterer.active_macro_clusters
+    #
+    #
+    #     label_ind = 0
+    #
+    #     for mc in macro_clusters:
+    #         _name = "C"+str(label_ind)
+    #
+    #         active_micro_clusters = clusterer.get_active_micro_clusters(mc)
+    #
+    #         centroid = EvolvingClusteringPartitioner.get_macro_cluster_centroid(active_micro_clusters)
+    #         fs = FuzzySet.FuzzySet(_name,EvolvingClustering.EvolvingClustering.calculate_membership, active_micro_clusters,centroid)
+    #
+    #         sets[_name] = fs
+    #         label_ind += 1
+    #
+    #     return sets
+
+    # Micro clusters as fuzzy sets version
     def build(self, data):
         sets = {}
         clusterer = EvolvingClustering.EvolvingClustering(variance_limit=self.variance_limit, debug=self.debug, plot_graph=True)
 
         clusterer.fit(data.values)
 
-        macro_clusters = clusterer.active_macro_clusters
+        micro_clusters = clusterer.get_all_active_micro_clusters()
 
 
         label_ind = 0
 
-        for mc in macro_clusters:
+        for m in micro_clusters:
             _name = "C"+str(label_ind)
+            centroid =  m["mean"]
 
-            active_micro_clusters = clusterer.get_active_micro_clusters(mc)
-
-            centroid = EvolvingClusteringPartitioner.get_macro_cluster_centroid(active_micro_clusters)
-            fs = FuzzySet.FuzzySet(_name,EvolvingClustering.EvolvingClustering.calculate_membership, active_micro_clusters,centroid)
+            fs = FuzzySet.FuzzySet(_name, EvolvingClustering.EvolvingClustering.calculate_micro_membership, [m, clusterer.get_total_density()], centroid)
 
             sets[_name] = fs
             label_ind += 1

@@ -31,6 +31,17 @@ class ClusteredMultivariateHighOrderFLRG(flrg.FLRG):
     def __len__(self):
         return len(self.RHS)
 
+    def get_midpoint(self, sets):
+        """
+        Returns the midpoint value for the RHS fuzzy sets
+
+        :param sets: fuzzy sets
+        :return: the midpoint value
+        """
+        if self.midpoint is None:
+            self.midpoint = np.nanmean(self.get_midpoints(sets), axis=0)
+        return self.midpoint
+
 
 class ClusteredMultivariateHighOrderFTS(fts.FTS):
     """Conventional High Order Fuzzy Time Series"""
@@ -43,6 +54,8 @@ class ClusteredMultivariateHighOrderFTS(fts.FTS):
         self.setsDict = {}
         self.is_high_order = True
         self.membership_threshold = kwargs.get('membership_threshold',0.6)
+        self.t_norm = kwargs.get('t_norm','threshold')
+        self.defuzzy = kwargs.get('defuzzy','mean')
 
 
     def generate_lhs_flrg(self, sample):
@@ -97,17 +110,29 @@ class ClusteredMultivariateHighOrderFTS(fts.FTS):
         for key in self.partitioner.ordered_sets:
             memberships[i] = self.sets[key].membership(x)
             i += 1
-        # sorting memberships
-        descending = np.argsort(memberships)[::-1]
-        total_membership = 0
 
-        for mb in descending:
-            if total_membership <= self.membership_threshold:
-                fuzzy_sequence.append(list(self.partitioner.ordered_sets)[mb])
-            else:
-                break
+        if self.t_norm == 'threshold':
+            # sorting memberships
+            descending = np.argsort(memberships)[::-1]
+            total_membership = 0
 
-            total_membership += memberships[mb]
+            for mb in descending:
+                if total_membership <= self.membership_threshold:
+                    fuzzy_sequence.append(list(self.partitioner.ordered_sets)[mb])
+                else:
+                    break
+
+                total_membership += memberships[mb]
+        elif self.t_norm == 'nonzero':
+            # sorting memberships
+            descending = np.argsort(memberships)[::-1]
+            total_membership = 0
+
+            for mb in descending:
+                if memberships[mb] > 0:
+                    fuzzy_sequence.append(list(self.partitioner.ordered_sets)[mb])
+                else:
+                    break
 
         return fuzzy_sequence
 
@@ -145,15 +170,14 @@ class ClusteredMultivariateHighOrderFTS(fts.FTS):
 
                     midpoints.append(f.get_midpoint(self.sets))
 
+            if self.defuzzy == 'weighted':
                 mvs = []
                 for i in np.arange(self.order):
                     mvs.append(self.sets[flrg.LHS[i]].membership(sample[i]))
-
                 memberships.append(np.prod(mvs))
-
-
-            # mv_midps = [x * y for x, y in zip(midpoints, memberships)]
-            # ret.append(np.sum(mv_midps, axis=0)/np.sum(memberships))
-            ret.append(np.nanmean(midpoints, axis=0))
+                mv_midps = [x * y for x, y in zip(midpoints, memberships)]
+                ret.append(np.sum(mv_midps, axis=0)/np.sum(memberships))
+            elif self.defuzzy == 'mean':
+                ret.append(np.nanmean(midpoints, axis=0))
 
         return ret
