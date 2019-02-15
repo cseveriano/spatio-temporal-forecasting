@@ -134,6 +134,9 @@ class ClusteredMultivariateHighOrderFTS(fts.FTS):
                 else:
                     break
 
+            if not fuzzy_sequence:
+                fuzzy_sequence.append(list(self.partitioner.ordered_sets)[descending[0]])
+
         return fuzzy_sequence
 
     def train(self, data, **kwargs):

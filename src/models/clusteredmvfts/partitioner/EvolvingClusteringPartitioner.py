@@ -43,7 +43,7 @@ class EvolvingClusteringPartitioner(partitioner.Partitioner):
     # Micro clusters as fuzzy sets version
     def build(self, data):
         sets = {}
-        clusterer = EvolvingClustering.EvolvingClustering(variance_limit=self.variance_limit, debug=self.debug, plot_graph=True)
+        clusterer = EvolvingClustering.EvolvingClustering(variance_limit=self.variance_limit, debug=self.debug, plot_graph=False)
 
         clusterer.fit(data.values)
 

@@ -3,7 +3,7 @@ import os
 import matplotlib.pyplot as plt
 import math
 from sklearn.metrics import mean_squared_error
-
+import numpy as np
 from clusteredmvfts.fts import cmvhofts
 from clusteredmvfts.partitioner import EvolvingClusteringPartitioner
 
@@ -53,7 +53,7 @@ two_stations = ['DHHL_3',  'DHHL_4']
 #All neighbor stations with residual correlation greater than .90
 neighbor_stations_90 = ['DHHL_3',  'DHHL_4','DHHL_5','DHHL_10','DHHL_11','DHHL_9','DHHL_2', 'DHHL_6','DHHL_7','DHHL_8']
 
-input = two_stations
+input = neighbor_stations_90
 output = target_station
 
 df = pd.read_pickle(os.path.join(os.getcwd(), "../notebooks/df_oahu.pkl"))
@@ -87,7 +87,7 @@ def evol_cluster_forecast(train_df, test_df):
 
     fuzzy_sets = EvolvingClusteringPartitioner.EvolvingClusteringPartitioner(data=train_df, variance_limit=0.001, debug=True)
 
-    model = cmvhofts.ClusteredMultivariateHighOrderFTS(t_norm='nonzero')
+    model = cmvhofts.ClusteredMultivariateHighOrderFTS(t_norm='nonzero', defuzzy='weighted')
 
     model.fit(train_df.values, order=_order, partitioner=fuzzy_sets, verbose = False)
 
