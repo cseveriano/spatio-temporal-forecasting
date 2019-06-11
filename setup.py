@@ -2,9 +2,9 @@ from setuptools import setup, find_packages
 
 setup(
     name='spatio-temporal-forecasting',
-    package_dir={'':'src/models'},
-    packages=find_packages("src/models"),
-    version='0.1',
+    packages=['spatiotemporal', 'spatiotemporal.models', 'spatiotemporal.models.clusteredmvfts', 'spatiotemporal.data', 'spatiotemporal.features', 'spatiotemporal.test', 'spatiotemporal.util', 'spatiotemporal.visualization'],
+	package_dir={'spatiotemporal': 'src/spatiotemporal'},
+    version='1.0',
     description='Spatio Temporal Forecasting',
     author='Carlos Severiano',
     author_email='carlossjr@gmail.com',

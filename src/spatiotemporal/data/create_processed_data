@@ -1,0 +1,3 @@
+python make_sonda_15min.py SBR
+python make_sonda_15min.py JOI
+python make_sonda_15min.py FLN
