@@ -1,6 +1,6 @@
 from pyFTS.partitioners import partitioner
 from evolving import EvolvingClustering
-from clusteredmvfts.partitioner import FuzzySet
+from . import FuzzySet
 class EvolvingClusteringPartitioner(partitioner.Partitioner):
 
     def __init__(self, **kwargs):

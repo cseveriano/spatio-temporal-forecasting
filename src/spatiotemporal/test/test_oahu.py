@@ -1,15 +1,21 @@
 import pandas as pd
-from spatiotemporal.util import common
+from pyFTS.models import hofts
+from pyFTS.partitioners import Grid, Entropy
+from spatiotemporal.util import benchmarks
 
 ## load local dataset
-hink_cs_df = pd.read_csv("../../../data/processed/NREL/Oahu/hink_cs_df.csv")
+hink_cs_df = pd.read_csv("../../../data/processed/NREL/Oahu/hink_cs_df.csv",  parse_dates=['Time'], index_col=0)
 
 hink_cs_df.head()
 
-## run colab processing lines
-hink_cs_df = common.resample_data(hink_cs_df, "10min")
-hink_train_cs_df, hink_test_cs_df = common.train_test_split(hink_cs_df, 0.5)
+## run benchmark methods
+resample = '10min'
+output = "DHHL_3"
+methods = [hofts.HighOrderFTS]
+orders = [1, 2]
+steps_ahead = [1]
+partitioners = [Grid.GridPartitioner]
+partitions = [10]
 
-
-## create fit and forecast methods
-
+benchmarks.rolling_window_benchmark(hink_cs_df, train=0.8, resample=resample, output=output, methods=methods, orders=orders,
+                         steps_ahead=steps_ahead, partitioners=partitioners, partitions=partitions)

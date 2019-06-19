@@ -1,7 +1,7 @@
 from pyFTS.common import FuzzySet
 from pyFTS.partitioners import partitioner
 from sklearn.cluster import MiniBatchKMeans
-from clusteredmvfts.partitioner import ClusterMembership
+from . import ClusterMembership
 
 class KMeansPartitioner(partitioner.Partitioner):
 
