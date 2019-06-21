@@ -141,7 +141,9 @@ class ClusteredMultivariateHighOrderFTS(fts.FTS):
 
     def train(self, data, **kwargs):
 
-        if kwargs.get('sets', None) is not None:
+        if self.partitioner is not None:
+            self.sets = self.partitioner.sets
+        elif kwargs.get('sets', None) is not None:
             self.sets = kwargs.get('sets', None)
 
         self.generate_flrg(data)
