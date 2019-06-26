@@ -62,7 +62,7 @@ mlp_space = {
         'order': hp.choice('order', [1,2, 4, 8]),
         'input': hp.choice('input', [['DH3', 'DH4','DH5','DH10','DH11','DH9','DH2', 'DH6','DH7','DH8']]),
         'output': hp.choice('output', ['DH3']),
-        'neurons': hp.choice('neurons', [[50],[50, 100], [50, 100, 150]]),
+        'neurons': hp.choice('neurons', [[8], [64, 32, 8], [8,4]]),
         'epochs': hp.choice('epochs', [50, 100, 150]) }
 
 # convert series to supervised learning

@@ -11,8 +11,8 @@ methods = []
 #methods.append(("HOFTS", ms.hofts_forecast, ms.hofts_space))
 #methods.append(("VAR", ms.var_forecast, ms.var_space))
 #methods.append(("MLP", ms.mlp_forecast, ms.mlp_space))
-#methods.append(("CMVFTS", ms.cmvfts_forecast, ms.cmvfts_space))
-methods.append(("FUZZYCNN", ms.fuzzycnn_forecast, ms.fuzzycnn_space))
+methods.append(("CMVFTS", ms.cmvfts_forecast, ms.cmvfts_space))
+#methods.append(("FUZZYCNN", ms.fuzzycnn_forecast, ms.fuzzycnn_space))
 
 train = 0.5
 parameter_tuning.run_search(methods, hink_cs_df, train, mean_squared_error, max_evals=3, resample="10min")
