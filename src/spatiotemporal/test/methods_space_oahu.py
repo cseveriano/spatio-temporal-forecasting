@@ -2,9 +2,48 @@ from hyperopt import hp
 import pandas as pd
 import numpy as np
 from pyFTS.models import hofts
+from pyFTS.models.multivariate import granular
 from pyFTS.partitioners import Grid, Entropy
+from pyFTS.models.multivariate import variable
+from pyFTS.common import Membership
+
+############# Granular FTS ##############
+
+granular_space = {
+    'npartitions': hp.choice('npartitions', [10, 50, 100]),
+    'order': hp.choice('order', [1, 2, 3]),
+    'knn': hp.choice('knn', [1, 2, 3]),
+    'alpha_cut': hp.choice('alpha_cut', [0.3, 0.5]),
+    'input': hp.choice('input', [['DH4', 'DH5', 'DH6']]),
+    'output': hp.choice('output', ['DH4'])}
+
+
+def granular_forecast(train_df, test_df, params):
+    _input = list(params['input'])
+    _output = params['output']
+    _npartitions = params['npartitions']
+    _order = params['order']
+    _knn = params['knn']
+    _alpha_cut = params['alpha_cut']
+
+    ## create explanatory variables
+    exp_variables = []
+    for vc in _input:
+        exp_variables.append(variable.Variable(vc, data_label=vc, alias=vc,
+                                               npart=_npartitions, func=Membership.trimf,
+                                               data=train_df, alpha_cut=_alpha_cut))
+    model = granular.GranularWMVFTS(explanatory_variables=exp_variables, target_variable=exp_variables[0], order=_order,
+                                    knn=_knn)
+    model.fit(train_df[_input], num_batches=10, dump='time',batch_save=True)
+
+    forecast = model.predict(test_df[_input], type='multivariate')
+
+    return forecast[_output].values
+
+############# Granular FTS ##############
 
 ############# High Order FTS ##############
+
 hofts_space = {'partitioner': hp.choice('partitioner', [Grid.GridPartitioner, Entropy.EntropyPartitioner]),
         'npartitions': hp.choice('npartitions', [10, 50,100]),
         'order': hp.choice('order', [1,2]),
@@ -42,7 +81,7 @@ def var_forecast(train_df, test_df, params):
     _step = 1
 
     model = VAR(train_df[_input].values)
-    results = model.fit(maxlags=_order)
+    results = model.fit(_order)
     lag_order = results.k_ar
     params['order'] = lag_order
 
@@ -56,14 +95,36 @@ def var_forecast(train_df, test_df, params):
 
 ############# MultiLayer Perceptron ##############
 from keras.models import Sequential
-from keras.layers import Dense
+from keras.layers.core import Dense, Dropout, Activation
+from keras.layers.normalization import BatchNormalization
+from keras.metrics import mean_squared_error
 
-mlp_space = {
-        'order': hp.choice('order', [1,2, 4, 8]),
-        'input': hp.choice('input', [['DH3', 'DH4','DH5','DH10','DH11','DH9','DH2', 'DH6','DH7','DH8']]),
-        'output': hp.choice('output', ['DH3']),
-        'neurons': hp.choice('neurons', [[8], [64, 32, 8], [8,4]]),
-        'epochs': hp.choice('epochs', [50, 100, 150]) }
+mlp_space = {'choice':
+
+   hp.choice('num_layers',
+             [
+                 {'layers': 'two',
+                 },
+
+                 {'layers': 'three',
+
+                   'units3': hp.choice('units3', [64, 128, 256, 512]),
+                   'dropout3': hp.choice('dropout3', [0.25, 0.5, 0.75])
+                  }
+
+             ]),
+   'units1': hp.choice('units1', [64, 128, 256, 512]),
+   'units2': hp.choice('units2', [64, 128, 256, 512]),
+
+   'dropout1': hp.choice('dropout1', [0.25, 0.5, 0.75]),
+   'dropout2': hp.choice('dropout2', [0.25, 0.5, 0.75]),
+
+   'batch_size': hp.choice('batch_size', [28, 64, 128]),
+   'order': hp.choice('order', [1, 2, 4, 8]),
+   'input': hp.choice('input', [['DH3', 'DH4', 'DH5', 'DH10', 'DH11', 'DH9', 'DH2', 'DH6', 'DH7', 'DH8']]),
+   'output': hp.choice('output', ['DH3']),
+   'epochs': hp.choice('epochs', [50, 100, 150])}
+
 
 # convert series to supervised learning
 def series_to_supervised(data, n_in=1, n_out=1, dropnan=True):
@@ -93,9 +154,8 @@ def series_to_supervised(data, n_in=1, n_out=1, dropnan=True):
 def mlp_forecast(train_df, test_df, params):
     _input = list(params['input'])
     _nlags = params['order']
-    _neurons = params['neurons']
     _epochs = params['epochs']
-
+    _batch_size = params['batch_size']
     nfeat = len(_input)
     nsteps = 1
     nobs = _nlags * nfeat
@@ -108,17 +168,27 @@ def mlp_forecast(train_df, test_df, params):
 
     # design network
     model = Sequential()
+    model.add(Dense(params['units1'], input_shape=train_X.shape[1], activation='relu'))
+    model.add(Dropout(params['dropout1']))
+    model.add(BatchNormalization())
 
-    for n in _neurons:
-        model.add(Dense(n, activation='relu', input_dim=train_X.shape[1]))
+    model.add(Dense(params['units2'], activation='relu'))
+    model.add(Dropout(params['dropout2']))
+    model.add(BatchNormalization())
 
-    model.add(Dense(1))
-    model.compile(loss='mean_squared_error', optimizer='adam')
+    if params['choice']['layers'] == 'three':
+        model.add(Dense(params['choice']['units3'], activation='relu'))
+        model.add(Dropout(params['choice']['dropout3']))
+        model.add(BatchNormalization())
 
-    # fit network
-    history = model.fit(train_X, train_Y, epochs=_epochs, batch_size=72, verbose=False, shuffle=False)
+    model.add(Dense(1, activation='sigmoid'))
+    model.compile(loss=mean_squared_error, optimizer='adam')
 
-    forecast = model.predict(test_X)
+    # includes the call back object
+    model.fit(train_X, train_Y, epochs=_epochs, batch_size=_batch_size, verbose=False, shuffle=False)
+
+    # predict the test set
+    forecast = model.predict(test_X, verbose=False)
 
     return forecast
 
@@ -207,3 +277,37 @@ def fuzzycnn_forecast(train_df, test_df, params):
 
 ############# Fuzzy CNN ##############
 
+############# Granular FTS ##############
+
+granular_space = {
+    'npartitions': hp.choice('npartitions', [100, 150, 200]),
+    'order': hp.choice('order', [1, 2, 3]),
+    'knn': hp.choice('knn', [1, 2, 3, 4, 5]),
+    'alpha_cut': hp.choice('alpha_cut', [0, 0.1, 0.2, 0.3]),
+    'input': hp.choice('input', [['DH4', 'DH5', 'DH6']]),
+    'output': hp.choice('output', ['DH4'])}
+
+
+def granular_forecast(train_df, test_df, params):
+    _input = list(params['input'])
+    _output = params['output']
+    _npartitions = params['npartitions']
+    _order = params['order']
+    _knn = params['knn']
+    _alpha_cut = params['alpha_cut']
+
+    ## create explanatory variables
+    exp_variables = []
+    for vc in _input:
+        exp_variables.append(variable.Variable(vc, data_label=vc, alias=vc,
+                                               npart=_npartitions, func=Membership.trimf,
+                                               data=train_df, alpha_cut=_alpha_cut))
+    model = granular.GranularWMVFTS(explanatory_variables=exp_variables, target_variable=exp_variables[0], order=_order,
+                                    knn=_knn)
+    model.fit(train_df[_input], num_batches=1)
+
+    forecast = model.predict(test_df[_input], type='multivariate')
+
+    return forecast[_output].values
+
+############# Granular FTS ##############
