@@ -116,8 +116,8 @@ mlp_space = {'choice':
    'units1': hp.choice('units1', [64, 128, 256, 512]),
    'units2': hp.choice('units2', [64, 128, 256, 512]),
 
-   'dropout1': hp.choice('dropout1', [0.25, 0.5, 0.75]),
-   'dropout2': hp.choice('dropout2', [0.25, 0.5, 0.75]),
+   'dropout1': hp.choice('dropout1', [0, 0.25, 0.5, 0.75]),
+   'dropout2': hp.choice('dropout2', [0, 0.25, 0.5, 0.75]),
 
    'batch_size': hp.choice('batch_size', [28, 64, 128]),
    'order': hp.choice('order', [1, 2, 4, 8]),
@@ -168,7 +168,7 @@ def mlp_forecast(train_df, test_df, params):
 
     # design network
     model = Sequential()
-    model.add(Dense(params['units1'], input_shape=train_X.shape[1], activation='relu'))
+    model.add(Dense(params['units1'], input_dim=train_X.shape[1], activation='relu'))
     model.add(Dropout(params['dropout1']))
     model.add(BatchNormalization())
 
