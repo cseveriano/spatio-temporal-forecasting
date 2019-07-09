@@ -7,40 +7,6 @@ from pyFTS.partitioners import Grid, Entropy
 from pyFTS.models.multivariate import variable
 from pyFTS.common import Membership
 
-############# Granular FTS ##############
-
-granular_space = {
-    'npartitions': hp.choice('npartitions', [10, 50, 100]),
-    'order': hp.choice('order', [1, 2, 3]),
-    'knn': hp.choice('knn', [1, 2, 3]),
-    'alpha_cut': hp.choice('alpha_cut', [0.3, 0.5]),
-    'input': hp.choice('input', [['DH4', 'DH5', 'DH6']]),
-    'output': hp.choice('output', ['DH4'])}
-
-
-def granular_forecast(train_df, test_df, params):
-    _input = list(params['input'])
-    _output = params['output']
-    _npartitions = params['npartitions']
-    _order = params['order']
-    _knn = params['knn']
-    _alpha_cut = params['alpha_cut']
-
-    ## create explanatory variables
-    exp_variables = []
-    for vc in _input:
-        exp_variables.append(variable.Variable(vc, data_label=vc, alias=vc,
-                                               npart=_npartitions, func=Membership.trimf,
-                                               data=train_df, alpha_cut=_alpha_cut))
-    model = granular.GranularWMVFTS(explanatory_variables=exp_variables, target_variable=exp_variables[0], order=_order,
-                                    knn=_knn)
-    model.fit(train_df[_input], num_batches=10, dump='time',batch_save=True)
-
-    forecast = model.predict(test_df[_input], type='multivariate')
-
-    return forecast[_output].values
-
-############# Granular FTS ##############
 
 ############# High Order FTS ##############
 
@@ -55,12 +21,13 @@ def hofts_forecast(train_df, test_df, params):
     _npartitions = params['npartitions']
     _order = params['order']
     _input = params['input']
+    _step = params['step']
 
     fuzzy_sets = _partitioner(data=train_df[_input].values, npart=_npartitions)
     model = hofts.HighOrderFTS(order=_order)
 
     model.fit(train_df[_input].values, order=_order, partitioner=fuzzy_sets)
-    forecast = model.predict(test_df[_input].values)
+    forecast = model.predict(test_df[_input].values, steps_ahead=_step)
 
     return forecast
 
@@ -78,7 +45,7 @@ def var_forecast(train_df, test_df, params):
     _order = params['order']
     _input = list(params['input'])
     _output = params['output']
-    _step = 1
+    _step = params['step']
 
     model = VAR(train_df[_input].values)
     results = model.fit(_order)
@@ -86,8 +53,9 @@ def var_forecast(train_df, test_df, params):
     params['order'] = lag_order
 
     forecast = []
-    for i in np.arange(0,len(test_df)-lag_order,_step):
-        forecast.extend(results.forecast(test_df[_input].values[i:i+lag_order],_step))
+    for i in np.arange(0,len(test_df)-lag_order-_step+1):
+        fcst = results.forecast(test_df[_input].values[i:i+lag_order],_step)
+        forecast.append(fcst[-1])
 
     forecast_df = pd.DataFrame(columns=test_df[_input].columns, data=forecast)
     return forecast_df[_output].values
@@ -108,22 +76,22 @@ mlp_space = {'choice':
 
                  {'layers': 'three',
 
-                   'units3': hp.choice('units3', [64, 128, 256, 512]),
-                   'dropout3': hp.choice('dropout3', [0.25, 0.5, 0.75])
+                   'units3': hp.choice('units3', [8, 16, 64, 128, 256, 512]),
+                   'dropout3': hp.choice('dropout3', [0, 0.25, 0.5, 0.75])
                   }
 
              ]),
-   'units1': hp.choice('units1', [64, 128, 256, 512]),
-   'units2': hp.choice('units2', [64, 128, 256, 512]),
+   'units1': hp.choice('units1', [8, 16, 64, 128, 256, 512]),
+   'units2': hp.choice('units2', [8, 16, 64, 128, 256, 512]),
 
    'dropout1': hp.choice('dropout1', [0, 0.25, 0.5, 0.75]),
    'dropout2': hp.choice('dropout2', [0, 0.25, 0.5, 0.75]),
 
-   'batch_size': hp.choice('batch_size', [28, 64, 128]),
-   'order': hp.choice('order', [1, 2, 4, 8]),
-   'input': hp.choice('input', [['DH3', 'DH4', 'DH5', 'DH10', 'DH11', 'DH9', 'DH2', 'DH6', 'DH7', 'DH8']]),
-   'output': hp.choice('output', ['DH3']),
-   'epochs': hp.choice('epochs', [50, 100, 150])}
+   'batch_size': hp.choice('batch_size', [28, 64, 128, 256, 512]),
+   'order': hp.choice('order', [1, 2, 3]),
+   'input': hp.choice('input', [['DH4','DH5','DH6']]),
+   'output': hp.choice('output', ['DH4']),
+   'epochs': hp.choice('epochs', [100, 200, 300])}
 
 
 # convert series to supervised learning
@@ -157,14 +125,18 @@ def mlp_forecast(train_df, test_df, params):
     _epochs = params['epochs']
     _batch_size = params['batch_size']
     nfeat = len(_input)
-    nsteps = 1
+    nsteps = params['step']
     nobs = _nlags * nfeat
+    output_index = []
+
+    for s in range(nsteps,0,-1):
+        output_index.append(-nfeat*s)
 
     train_reshaped_df = series_to_supervised(train_df[_input], n_in=_nlags, n_out=nsteps)
-    train_X, train_Y = train_reshaped_df.iloc[:, :nobs].values, train_reshaped_df.iloc[:, -nfeat].values
+    train_X, train_Y = train_reshaped_df.iloc[:, :nobs].values, train_reshaped_df.iloc[:, output_index].values
 
     test_reshaped_df = series_to_supervised(test_df[_input], n_in=_nlags, n_out=nsteps)
-    test_X, test_Y = test_reshaped_df.iloc[:, :nobs].values, test_reshaped_df.iloc[:, -nfeat].values
+    test_X, test_Y = test_reshaped_df.iloc[:, :nobs].values, test_reshaped_df.iloc[:, output_index].values
 
     # design network
     model = Sequential()
@@ -181,7 +153,7 @@ def mlp_forecast(train_df, test_df, params):
         model.add(Dropout(params['choice']['dropout3']))
         model.add(BatchNormalization())
 
-    model.add(Dense(1, activation='sigmoid'))
+    model.add(Dense(nsteps, activation='sigmoid'))
     model.compile(loss=mean_squared_error, optimizer='adam')
 
     # includes the call back object
@@ -189,6 +161,9 @@ def mlp_forecast(train_df, test_df, params):
 
     # predict the test set
     forecast = model.predict(test_X, verbose=False)
+
+    if nsteps > 1:
+        forecast = forecast[:,-1]
 
     return forecast
 
@@ -217,12 +192,13 @@ def cmvfts_forecast(train_df, test_df, params):
     _order = params['order']
     _input = list(params['input'])
     _output = params['output']
+    _step = params['step']
 
     fuzzy_sets = EvolvingClusteringPartitioner.EvolvingClusteringPartitioner(data=train_df[_input],
                                                                              variance_limit=_variance_limit, debug=False)
     model = cmvhofts.ClusteredMultivariateHighOrderFTS(t_norm=_t_norm, defuzzy=_defuzzy)
     model.fit(train_df[_input].values, order=_order, partitioner=fuzzy_sets, verbose=False)
-    forecast = model.predict(test_df[_input].values)
+    forecast = model.predict(test_df[_input].values, steps_ahead=_step)
 
     forecast_df = pd.DataFrame(data=forecast, columns=test_df[_input].columns)
     return forecast_df[_output].values[:-1]
@@ -263,6 +239,7 @@ def fuzzycnn_forecast(train_df, test_df, params):
     _dropout = params['dropout']
     _batch_size = params['batch_size']
     _epochs = params['epochs']
+    _step = params['step']
 
     fuzzy_sets = Grid.GridPartitioner(data=train_df[_input].values, npart=_npartitions).sets
     model = FuzzyImageCNN.FuzzyImageCNN(fuzzy_sets, nlags=_order, steps=1,
@@ -272,7 +249,8 @@ def fuzzycnn_forecast(train_df, test_df, params):
 
     model.fit(train_df[_input], batch_size=_batch_size, epochs=_epochs)
 
-    forecast = model.predict(test_df[_input])
+    forecast = model.predict(test_df[_input], steps_ahead=_step)
+
     return [f[0] for f in forecast]
 
 ############# Fuzzy CNN ##############
@@ -295,6 +273,7 @@ def granular_forecast(train_df, test_df, params):
     _order = params['order']
     _knn = params['knn']
     _alpha_cut = params['alpha_cut']
+    _step = params['step']
 
     ## create explanatory variables
     exp_variables = []
@@ -306,8 +285,29 @@ def granular_forecast(train_df, test_df, params):
                                     knn=_knn)
     model.fit(train_df[_input], num_batches=1)
 
-    forecast = model.predict(test_df[_input], type='multivariate')
+    if _step > 1:
+        forecast = pd.DataFrame(columns=test_df.columns)
+        length = len(test_df.index)
+
+        for k in range(0,(length -(_order + _step - 1))):
+            fcst = model.predict(test_df[_input], type='multivariate', start_at=k, steps_ahead=_step)
+            forecast = forecast.append(fcst.tail(1))
+    else:
+        forecast = model.predict(test_df[_input], type='multivariate')
 
     return forecast[_output].values
 
 ############# Granular FTS ##############
+
+############# Persistence ##############
+
+def persistence_forecast(train_df, test_df, params):
+    predictions = []
+    _order = params['order']
+    _step = params['step']
+
+    for t in np.arange(_order, len(test_df), _step):
+        yhat = [test_df.iloc[t]] * _step
+        predictions.extend(yhat)
+
+    return predictions

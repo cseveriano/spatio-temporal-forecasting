@@ -5,8 +5,8 @@ from . import sampling
 import pickle
 
 
-def calculate_error(loss_function, test_df, forecast, order):
-    error = loss_function(test_df.iloc[(order):], forecast)
+def calculate_error(loss_function, test_df, forecast, offset):
+    error = loss_function(test_df.iloc[(offset):], forecast)
     print("Error : "+str(error))
     return error
 
@@ -16,7 +16,8 @@ def method_optimize(experiment, forecast_method, train_df, test_df, space, loss_
         print(params)
         try:
             forecast = forecast_method(train_df, test_df, params)
-            error = calculate_error(loss_function, test_df[params['output']], forecast, params['order'])
+            offset = params['order'] + params['step'] - 1
+            error = calculate_error(loss_function, test_df[params['output']], forecast, offset)
         except Exception:
             traceback.print_exc()
             error = 1000

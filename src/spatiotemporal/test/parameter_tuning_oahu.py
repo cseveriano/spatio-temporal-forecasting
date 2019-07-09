@@ -5,17 +5,18 @@ from sklearn.metrics import mean_squared_error
 
 ## load local dataset
 hink_cs_df = pd.read_csv("../../../data/processed/NREL/Oahu/hink_cs_df.csv",  parse_dates=['Time'], index_col=0)
-hink_cs_df = hink_cs_df['2010-07-31':'2010-08-1']
+hink_cs_df = hink_cs_df['2010-07-31']
 
 methods = []
 #methods.append(("HOFTS", ms.hofts_forecast, ms.hofts_space))
 #methods.append(("VAR", ms.var_forecast, ms.var_space))
-#methods.append(("MLP", ms.mlp_forecast, ms.mlp_space))
-methods.append(("CMVFTS", ms.cmvfts_forecast, ms.cmvfts_space))
+methods.append(("MLP", ms.mlp_forecast, ms.mlp_space))
+#methods.append(("CMVFTS", ms.cmvfts_forecast, ms.cmvfts_space))
 #methods.append(("FUZZYCNN", ms.fuzzycnn_forecast, ms.fuzzycnn_space))
+#methods.append(("GRANULAR", ms.granular_forecast, ms.granular_space))
 
 train = 0.5
-parameter_tuning.run_search(methods, hink_cs_df, train, mean_squared_error, max_evals=3, resample="10min")
+parameter_tuning.run_search(methods, hink_cs_df, train, mean_squared_error, max_evals=100, resample=None)
 
 ############### Load Tuning Results ##################
 

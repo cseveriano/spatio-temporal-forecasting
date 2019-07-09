@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 import math
 from sklearn.metrics import mean_squared_error
 import numpy as np
-from clusteredmvfts.fts import cmvhofts
-from clusteredmvfts.partitioner import EvolvingClusteringPartitioner
+from spatiotemporal.models.clusteredmvfts.fts import cmvhofts
+from spatiotemporal.models.clusteredmvfts.partitioner import EvolvingClusteringPartitioner
 
 
 def normalize(df):
@@ -56,7 +56,7 @@ neighbor_stations_90 = ['DHHL_3',  'DHHL_4','DHHL_5','DHHL_10','DHHL_11','DHHL_9
 input = neighbor_stations_90
 output = target_station
 
-df = pd.read_pickle(os.path.join(os.getcwd(), "../notebooks/df_oahu.pkl"))
+df = pd.read_pickle(os.path.join(os.getcwd(), "../../../../../notebooks/df_oahu.pkl"))
 
 ## Remove columns with many corrupted or missing values
 df.drop(columns=['AP_1', 'AP_7'], inplace=True)
@@ -72,7 +72,7 @@ max_raw = df[target_station].max()
 norm_df = normalize(df)
 
 # Split data
-interval = ((df.index >= '2010-06') & (df.index < '2010-07'))
+interval = ((df.index >= '2010-06') & (df.index < '2010-12'))
 #interval = ((df.index >= '2010-11') & (df.index <= '2010-12'))
 
 (train_df, validation_df, test_df) = split_data(df, interval)
@@ -105,7 +105,7 @@ forecast = denormalize(forecast[output], df[output])
 rmse = calculate_rmse(validation_df[output], forecast, _order, steps)
 print("RMSE: ", rmse)
 
-plt.figure()
-plt.plot(validation_df[output].iloc[_order:600].values)
-plt.plot(forecast[:(600-_order)])
-plt.show()
+#plt.figure()
+#plt.plot(validation_df[output].iloc[_order:600].values)
+#plt.plot(forecast[:(600-_order)])
+#plt.show()
