@@ -303,11 +303,12 @@ def granular_forecast(train_df, test_df, params):
 
 def persistence_forecast(train_df, test_df, params):
     predictions = []
+    _output = params['output']
     _order = params['order']
     _step = params['step']
 
-    for t in np.arange(_order, len(test_df), _step):
-        yhat = [test_df.iloc[t]] * _step
-        predictions.extend(yhat)
+    for t in np.arange(_order, len(test_df)-_step+1):
+        yhat = [test_df[_output].iloc[t]] * _step
+        predictions.append(yhat)
 
-    return predictions
+    return [p[-1] for p in predictions]

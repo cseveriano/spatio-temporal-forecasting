@@ -22,14 +22,18 @@ train_split = 0.5
 # space = ms.granular_space
 
 
-exp_id = "EXP_1_VAR"
-method = ms.var_forecast
-space = ms.var_space
+# exp_id = "EXP_1_VAR"
+# method = ms.var_forecast
+# space = ms.var_space
+#
+# params = ex.load_best_params(exp_id, space)
+# params['step'] = 2
 
-params = ex.load_best_params(exp_id, space)
-params['step'] = 2
 
-(rmse, smape, u) = ex.forecast_params(hink_cs_df, train_split, method, params, plot=False)
+method = ms.persistence_forecast
+params = {'order': 3, 'output': 'DH4', 'step': 2}
+
+(rmse, smape, u) = ex.forecast_params(hink_cs_df, train_split, method, params, plot=True)
 
 
 
