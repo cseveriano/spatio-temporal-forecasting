@@ -69,3 +69,51 @@ def forecast_params(data, train_split, method, params, plot=False):
     print("U Statistic: ", u)
 
     return rmse, smape, u
+
+import pandas as pd
+
+def rolling_window_forecast_params(data, train_percent, window_size, method, params):
+
+    # get training days
+    training_days = pd.unique(data.index.date)
+    fcst = []
+    yobs = []
+
+    for day in training_days:
+        daily_data = data[data.index.date == day]
+        nsamples = len(daily_data.index)
+        train_size = round(nsamples * train_percent)
+        test_end = 0
+        index = 0
+
+        while test_end < nsamples:
+            train_start, train_end, test_start, test_end = get_data_index(index, train_size, window_size, nsamples)
+            train = data[train_start:train_end]
+            test = data[test_start:test_end]
+            index += window_size
+
+            fcst.extend(method(train, test, params))
+            _output = params['output']
+            _offset = params['order'] + params['step'] - 1
+            yobs.extend(test[_output].iloc[_offset:].values)
+
+    rmse = Measures.rmse(yobs, fcst)
+    print("RMSE: ", rmse)
+
+    smape = Measures.smape(yobs, fcst)
+    print("SMAPE: ", smape)
+
+    u = Measures.UStatistic(yobs, fcst)
+    print("U Statistic: ", u)
+
+    return rmse, smape, u
+
+def get_data_index(index, train_size, window_size, limit):
+
+    train_start = index
+    train_end = index + train_size
+
+    test_start = train_end
+    test_end = min(test_start + window_size, limit)
+
+    return train_start, train_end, test_start, test_end
