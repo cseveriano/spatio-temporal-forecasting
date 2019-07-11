@@ -36,6 +36,6 @@ params['step'] = 2
 
 #(rmse, smape, u) = ex.forecast_params(hink_cs_df, train_split, method, params, plot=True)
 window_size = 100
-(rmse, smape, u) = ex.rolling_window_forecast_params(hink_cs_df, train_split, window_size, method, params)
+(rmse, nrmse, smape, u) = ex.rolling_window_forecast_params(hink_cs_df, train_split, window_size, method, params)
 
 

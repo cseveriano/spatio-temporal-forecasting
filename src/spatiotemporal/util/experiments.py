@@ -3,7 +3,7 @@ from hyperopt import space_eval
 from spatiotemporal.util import sampling
 import matplotlib.pyplot as plt
 from pyFTS.benchmarks import Measures
-
+from spatiotemporal.util import metrics
 
 def forecast_best_params(data, train_split, method_id, method, space, plot=False, save=False):
     print("Running experiment ", method_id)
@@ -25,6 +25,9 @@ def forecast_best_params(data, train_split, method_id, method, space, plot=False
     rmse = Measures.rmse(yobs, fcst)
     print("RMSE: ", rmse)
 
+    nrmse = metrics.normalized_rmse(yobs, fcst)
+    print("nRMSE: ", nrmse)
+
     smape = Measures.smape(yobs, fcst)
     print("SMAPE: ", smape)
 
@@ -35,7 +38,7 @@ def forecast_best_params(data, train_split, method_id, method, space, plot=False
         results = {"method_id": method_id, "forecast": fcst, "RMSE": rmse, "SMAPE": smape, "U": u}
         pickle.dump(results, open("results_" + method_id + ".pkl", "wb"))
 
-    return rmse, smape, u
+    return rmse, nrmse, smape, u
 
 
 def load_best_params(method_id, space, print=False):
@@ -62,13 +65,16 @@ def forecast_params(data, train_split, method, params, plot=False):
     rmse = Measures.rmse(yobs, fcst)
     print("RMSE: ", rmse)
 
+    nrmse = metrics.normalized_rmse(yobs, fcst)
+    print("nRMSE: ", nrmse)
+
     smape = Measures.smape(yobs, fcst)
     print("SMAPE: ", smape)
 
     u = Measures.UStatistic(yobs, fcst)
     print("U Statistic: ", u)
 
-    return rmse, smape, u
+    return rmse, nrmse, smape, u
 
 import pandas as pd
 
@@ -100,13 +106,16 @@ def rolling_window_forecast_params(data, train_percent, window_size, method, par
     rmse = Measures.rmse(yobs, fcst)
     print("RMSE: ", rmse)
 
+    nrmse = metrics.normalized_rmse(yobs, fcst)
+    print("nRMSE: ", nrmse)
+
     smape = Measures.smape(yobs, fcst)
     print("SMAPE: ", smape)
 
     u = Measures.UStatistic(yobs, fcst)
     print("U Statistic: ", u)
 
-    return rmse, smape, u
+    return rmse, nrmse, smape, u
 
 def get_data_index(index, train_size, window_size, limit):
 
