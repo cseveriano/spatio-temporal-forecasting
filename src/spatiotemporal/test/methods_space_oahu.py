@@ -7,6 +7,8 @@ from pyFTS.partitioners import Grid, Entropy
 from pyFTS.models.multivariate import variable
 from pyFTS.common import Membership
 
+import warnings
+warnings.filterwarnings("ignore")
 
 ############# High Order FTS ##############
 
@@ -162,10 +164,7 @@ def mlp_forecast(train_df, test_df, params):
     # predict the test set
     forecast = model.predict(test_X, verbose=False)
 
-    if nsteps > 1:
-        forecast = forecast[:,-1]
-
-    return forecast
+    return forecast[:,-1]
 
 ############# MultiLayer Perceptron ##############
 

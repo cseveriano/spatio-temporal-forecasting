@@ -86,6 +86,7 @@ def rolling_window_forecast_params(data, train_percent, window_size, method, par
     yobs = []
 
     for day in training_days:
+        print("Processing :", day)
         daily_data = data[data.index.date == day]
         nsamples = len(daily_data.index)
         train_size = round(nsamples * train_percent)
@@ -97,8 +98,9 @@ def rolling_window_forecast_params(data, train_percent, window_size, method, par
             train = data[train_start:train_end]
             test = data[test_start:test_end]
             index += window_size
+            f = method(train, test, params)
+            fcst.extend(f)
 
-            fcst.extend(method(train, test, params))
             _output = params['output']
             _offset = params['order'] + params['step'] - 1
             yobs.extend(test[_output].iloc[_offset:].values)
