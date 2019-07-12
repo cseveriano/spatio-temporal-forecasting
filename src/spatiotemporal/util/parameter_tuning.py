@@ -16,7 +16,8 @@ def method_optimize(experiment, forecast_method, train_df, test_df, space, loss_
         print(params)
         try:
             forecast = forecast_method(train_df, test_df, params)
-            offset = params['order'] + params['step'] - 1
+            _step = params.get('step', 1)
+            offset = params['order'] + _step - 1
             error = calculate_error(loss_function, test_df[params['output']], forecast, offset)
         except Exception:
             traceback.print_exc()

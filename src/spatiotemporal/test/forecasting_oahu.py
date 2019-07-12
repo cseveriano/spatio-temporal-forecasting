@@ -30,7 +30,7 @@ space = ms.mlp_space
 #space = ms.var_space
 #
 params = ex.load_best_params(exp_id, space)
-params['step'] = 1
+#params['step'] = 1
 
 
 # method = ms.persistence_forecast

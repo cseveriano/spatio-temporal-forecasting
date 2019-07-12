@@ -53,7 +53,8 @@ def forecast_params(data, train_split, method, params, plot=False):
     train, test = sampling.train_test_split(data, train_split)
     fcst = method(train, test, params)
     _output = params['output']
-    _offset = params['order'] + params['step'] - 1
+    _step = params.get('step', 1)
+    _offset = params['order'] + _step - 1
     yobs = test[_output].iloc[_offset:].values
 
     if plot:
@@ -100,9 +101,9 @@ def rolling_window_forecast_params(data, train_percent, window_size, method, par
             index += window_size
             f = method(train, test, params)
             fcst.extend(f)
-
+            _step = params.get('step', 1)
             _output = params['output']
-            _offset = params['order'] + params['step'] - 1
+            _offset = params['order'] + _step - 1
             yobs.extend(test[_output].iloc[_offset:].values)
 
     rmse = Measures.rmse(yobs, fcst)

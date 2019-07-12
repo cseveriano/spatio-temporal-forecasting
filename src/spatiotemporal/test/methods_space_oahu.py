@@ -23,7 +23,7 @@ def hofts_forecast(train_df, test_df, params):
     _npartitions = params['npartitions']
     _order = params['order']
     _input = params['input']
-    _step = params['step']
+    _step = params.get('step',1)
 
     fuzzy_sets = _partitioner(data=train_df[_input].values, npart=_npartitions)
     model = hofts.HighOrderFTS(order=_order)
@@ -47,7 +47,7 @@ def var_forecast(train_df, test_df, params):
     _order = params['order']
     _input = list(params['input'])
     _output = params['output']
-    _step = params['step']
+    _step = params.get('step',1)
 
     model = VAR(train_df[_input].values)
     results = model.fit(_order)
@@ -127,7 +127,7 @@ def mlp_forecast(train_df, test_df, params):
     _epochs = params['epochs']
     _batch_size = params['batch_size']
     nfeat = len(_input)
-    nsteps = params['step']
+    nsteps = params.get('step',1)
     nobs = _nlags * nfeat
     output_index = []
 
@@ -191,7 +191,7 @@ def cmvfts_forecast(train_df, test_df, params):
     _order = params['order']
     _input = list(params['input'])
     _output = params['output']
-    _step = params['step']
+    _step = params.get('step',1)
 
     fuzzy_sets = EvolvingClusteringPartitioner.EvolvingClusteringPartitioner(data=train_df[_input],
                                                                              variance_limit=_variance_limit, debug=False)
@@ -238,7 +238,7 @@ def fuzzycnn_forecast(train_df, test_df, params):
     _dropout = params['dropout']
     _batch_size = params['batch_size']
     _epochs = params['epochs']
-    _step = params['step']
+    _step = params.get('step',1)
 
     fuzzy_sets = Grid.GridPartitioner(data=train_df[_input].values, npart=_npartitions).sets
     model = FuzzyImageCNN.FuzzyImageCNN(fuzzy_sets, nlags=_order, steps=1,
@@ -272,7 +272,7 @@ def granular_forecast(train_df, test_df, params):
     _order = params['order']
     _knn = params['knn']
     _alpha_cut = params['alpha_cut']
-    _step = params['step']
+    _step = params.get('step',1)
 
     ## create explanatory variables
     exp_variables = []
@@ -304,7 +304,7 @@ def persistence_forecast(train_df, test_df, params):
     predictions = []
     _output = params['output']
     _order = params['order']
-    _step = params['step']
+    _step = params.get('step',1)
 
     for t in np.arange(_order, len(test_df)-_step+1):
         yhat = [test_df[_output].iloc[t]] * _step
