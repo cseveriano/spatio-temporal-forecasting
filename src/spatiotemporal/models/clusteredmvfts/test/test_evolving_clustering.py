@@ -3,9 +3,7 @@ import os
 import matplotlib.pyplot as plt
 import math
 from sklearn.metrics import mean_squared_error
-
-from clusteredmvfts.fts import cmvhofts
-from clusteredmvfts.partitioner import EvolvingClusteringPartitioner
+from spatiotemporal.models.clusteredmvfts.fts import evolvingclusterfts
 
 
 def normalize(df):
@@ -82,10 +80,7 @@ interval = ((df.index >= '2017-05') & (df.index <= '2017-06'))
 
 def evol_cluster_forecast(train_df, test_df):
 
-    fuzzy_sets = EvolvingClusteringPartitioner.EvolvingClusteringPartitioner(data=train_df, variance_limit=0.001, debug=True)
-
-    model = cmvhofts.ClusteredMultivariateHighOrderFTS("FTS", nlags=_order, partitioner=fuzzy_sets)
-
+    model = evolvingclusterfts.EvolvingClusterFTS("FTS", nlags=_order, variance_limit=0.001)
     model.fit(train_df, verbose = False)
 
     forecast = model.predict(test_df)

@@ -3,9 +3,7 @@ import os
 import matplotlib.pyplot as plt
 import math
 from sklearn.metrics import mean_squared_error
-import numpy as np
-from spatiotemporal.models.clusteredmvfts.fts import cmvhofts
-from spatiotemporal.models.clusteredmvfts.partitioner import EvolvingClusteringPartitioner
+from spatiotemporal.models.clusteredmvfts.fts import evolvingclusterfts
 
 
 def normalize(df):
@@ -72,8 +70,8 @@ max_raw = df[target_station].max()
 norm_df = normalize(df)
 
 # Split data
-interval = ((df.index >= '2010-06') & (df.index < '2010-12'))
-#interval = ((df.index >= '2010-11') & (df.index <= '2010-12'))
+#interval = ((df.index >= '2010-06') & (df.index < '2010-12'))
+interval = ((df.index >= '2010-11') & (df.index <= '2010-12'))
 
 (train_df, validation_df, test_df) = split_data(df, interval)
 (norm_train_df, norm_validation_df, norm_test_df) = split_data(norm_df, interval)
@@ -85,11 +83,9 @@ interval = ((df.index >= '2010-06') & (df.index < '2010-12'))
 
 def evol_cluster_forecast(train_df, test_df):
 
-    fuzzy_sets = EvolvingClusteringPartitioner.EvolvingClusteringPartitioner(data=train_df, variance_limit=0.001, debug=True)
+    model = evolvingclusterfts.EvolvingClusterFTS(t_norm='nonzero', defuzzy='weighted')
 
-    model = cmvhofts.ClusteredMultivariateHighOrderFTS(t_norm='nonzero', defuzzy='weighted')
-
-    model.fit(train_df.values, order=_order, partitioner=fuzzy_sets, verbose = False)
+    model.fit(train_df.values, order=_order, verbose = False)
 
     forecast = model.predict(test_df.values)
     forecast_df = pd.DataFrame(data=forecast, columns=test_df.columns)
@@ -105,7 +101,7 @@ forecast = denormalize(forecast[output], df[output])
 rmse = calculate_rmse(validation_df[output], forecast, _order, steps)
 print("RMSE: ", rmse)
 
-#plt.figure()
-#plt.plot(validation_df[output].iloc[_order:600].values)
-#plt.plot(forecast[:(600-_order)])
-#plt.show()
+plt.figure()
+plt.plot(validation_df[output].iloc[_order:600].values)
+plt.plot(forecast[:(600-_order)])
+plt.show()

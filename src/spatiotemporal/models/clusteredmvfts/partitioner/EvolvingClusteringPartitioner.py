@@ -7,37 +7,39 @@ class EvolvingClusteringPartitioner(partitioner.Partitioner):
         super(EvolvingClusteringPartitioner, self).__init__(name="EvolvingClustering", preprocess=False, **kwargs)
         self.variance_limit = kwargs.get('variance_limit',0.001)
         self.debug = kwargs.get('debug', False)
+        self.clusterer = EvolvingClustering.EvolvingClustering(variance_limit=self.variance_limit, debug=self.debug,
+                                                          plot_graph=False)
+
+
+        data = kwargs.get('data', None)
+        if data is not None:
+            self.build(data)
+        else:
+            self.sets = {}
+            self.ordered_sets = {}
 
 
 
-        data = kwargs.get('data', [None])
-        self.sets = self.build(data)
-
-        self.ordered_sets = list(self.sets.keys())
-
-
-    # Micro clusters as fuzzy sets version
+            # Micro clusters as fuzzy sets version
     def build(self, data):
-        sets = {}
-        clusterer = EvolvingClustering.EvolvingClustering(variance_limit=self.variance_limit, debug=self.debug, plot_graph=False)
 
-        clusterer.fit(data.values)
+        self.clusterer.fit(data)
 
-        micro_clusters = clusterer.get_all_active_micro_clusters()
-
-
-        label_ind = 0
+        if not self.sets:
+            micro_clusters = self.clusterer.get_all_active_micro_clusters()
+        else:
+            micro_clusters = self.clusterer.get_changed_micro_clusters()
 
         for m in micro_clusters:
-            _name = "C"+str(label_ind)
-            centroid =  m["mean"]
+            _name = "C" + '{:03}'.format(m['id'])
+            centroid = m["mean"]
 
-            fs = FuzzySet.FuzzySet(_name, EvolvingClustering.EvolvingClustering.calculate_micro_membership, [m, clusterer.get_total_density()], centroid)
+            fs = FuzzySet.FuzzySet(_name, EvolvingClustering.EvolvingClustering.calculate_micro_membership,
+                                       [m, self.clusterer.get_total_density()], centroid)
 
-            sets[_name] = fs
-            label_ind += 1
-
-        return sets
+            self.sets[_name] = fs
+            self.ordered_sets = list(self.sets.keys())
+        return self.sets
 
     @staticmethod
     def get_macro_cluster_centroid(micro_clusters):
