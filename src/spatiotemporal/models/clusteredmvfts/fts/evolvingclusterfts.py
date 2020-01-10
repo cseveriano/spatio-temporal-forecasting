@@ -12,6 +12,7 @@ class EvolvingClusterFLRG(flrg.FLRG):
         self.LHS = []
         self.RHS = {}
         self.strlhs = ""
+        self.key = None
 
     def append_rhs(self, c, **kwargs):
         if c not in self.RHS:
@@ -57,9 +58,10 @@ class EvolvingClusterFTS(fts.FTS):
         self.membership_threshold = kwargs.get('membership_threshold',0.6)
         self.t_norm = kwargs.get('t_norm','threshold')
         self.defuzzy = kwargs.get('defuzzy','mean')
-        variance_limit =  kwargs.get('variance_limit',0.001)
-        debug =  kwargs.get('debug', False)
-        self.partitioner = EvolvingClusteringPartitioner.EvolvingClusteringPartitioner(variance_limit = variance_limit, debug =  debug)
+        _variance_limit =  kwargs.get('variance_limit',0.001)
+        _pruning = kwargs.get('pruning', 100)
+        _debug =  kwargs.get('debug', False)
+        self.partitioner = EvolvingClusteringPartitioner.EvolvingClusteringPartitioner(variance_limit = _variance_limit, debug = _debug)
 
 
     def generate_lhs_flrg(self, sample):
@@ -170,23 +172,23 @@ class EvolvingClusterFTS(fts.FTS):
 
             for flrg in flrgs:
                 if flrg.get_key() not in self.flrgs:
-                    midpoints.append(self.sets[flrg.LHS[-1]].centroid)
+                    if len(flrg.LHS) > 0:
+                        mp = self.partitioner.sets[flrg.LHS[-1]].centroid
+                        mv = self.partitioner.sets[flrg.LHS[-1]].membership(sample[-1])
+                        midpoints.append(mp)
+                        memberships.append(mv)
                 else:
                     f = self.flrgs[flrg.get_key()]
+                    mp = f.get_midpoint(self.partitioner.sets)
+                    mv = f.get_membership(sample, self.partitioner.sets)
+                    midpoints.append(mp)
+                    memberships.append(mv)
 
-                    if f.midpoint is None:
-                        f.midpoint = np.nanmean(f.get_midpoints(self.sets), axis=0)
-
-                    midpoints.append(f.get_midpoint(self.sets))
-
-            if self.defuzzy == 'weighted':
-                mvs = []
-                for i in np.arange(self.order):
-                    mvs.append(self.sets[flrg.LHS[i]].membership(sample[i]))
-                memberships.append(np.prod(mvs))
+            if self.defuzzy == "mean":
+                final = np.nanmean(midpoints)
+            else:
                 mv_midps = [x * y for x, y in zip(midpoints, memberships)]
-                ret.append(np.sum(mv_midps, axis=0)/np.sum(memberships))
-            elif self.defuzzy == 'mean':
-                ret.append(np.nanmean(midpoints, axis=0))
+                final = np.nansum(mv_midps, axis=0) / np.nansum(memberships)
 
+            ret.append(final)
         return ret

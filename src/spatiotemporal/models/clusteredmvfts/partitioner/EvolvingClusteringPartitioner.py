@@ -9,7 +9,7 @@ class EvolvingClusteringPartitioner(partitioner.Partitioner):
         self.debug = kwargs.get('debug', False)
         self.clusterer = EvolvingClustering.EvolvingClustering(variance_limit=self.variance_limit, debug=self.debug,
                                                           plot_graph=False)
-
+        self.counter = 0
 
         data = kwargs.get('data', None)
         if data is not None:
@@ -22,13 +22,14 @@ class EvolvingClusteringPartitioner(partitioner.Partitioner):
 
             # Micro clusters as fuzzy sets version
     def build(self, data):
+        update_mc = True
 
-        self.clusterer.fit(data)
+        self.clusterer.fit(data, update_macro_clusters=update_mc, prune_micro_clusters=False)
 
         if not self.sets:
             micro_clusters = self.clusterer.get_all_active_micro_clusters()
         else:
-            micro_clusters = self.clusterer.get_changed_micro_clusters()
+            micro_clusters = self.clusterer.get_changed_active_micro_clusters()
 
         for m in micro_clusters:
             _name = "C" + '{:03}'.format(m['id'])
