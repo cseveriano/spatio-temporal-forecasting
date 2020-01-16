@@ -1,13 +1,14 @@
 from pyFTS.partitioners import partitioner
-from evolving import EvolvingClustering
+from evolving.EvolvingClustering import EvolvingClustering
 from . import FuzzySet
+
 class EvolvingClusteringPartitioner(partitioner.Partitioner):
 
     def __init__(self, **kwargs):
         super(EvolvingClusteringPartitioner, self).__init__(name="EvolvingClustering", preprocess=False, **kwargs)
         self.variance_limit = kwargs.get('variance_limit',0.001)
         self.debug = kwargs.get('debug', False)
-        self.clusterer = EvolvingClustering.EvolvingClustering(variance_limit=self.variance_limit, debug=self.debug,
+        self.clusterer = EvolvingClustering(variance_limit=self.variance_limit, debug=self.debug,
                                                           plot_graph=False)
         self.counter = 0
 
@@ -18,9 +19,7 @@ class EvolvingClusteringPartitioner(partitioner.Partitioner):
             self.sets = {}
             self.ordered_sets = {}
 
-
-
-            # Micro clusters as fuzzy sets version
+    # Micro clusters as fuzzy sets version
     def build(self, data):
         update_mc = True
 
@@ -35,12 +34,23 @@ class EvolvingClusteringPartitioner(partitioner.Partitioner):
             _name = "C" + '{:03}'.format(m['id'])
             centroid = m["mean"]
 
-            fs = FuzzySet.FuzzySet(_name, EvolvingClustering.EvolvingClustering.calculate_micro_membership,
-                                       [m, self.clusterer.get_total_density()], centroid)
+            fs = FuzzySet.FuzzySet(_name, EvolvingClusteringPartitioner.calculate_fuzzyset_membership,
+                                       [m], centroid)
 
             self.sets[_name] = fs
             self.ordered_sets = list(self.sets.keys())
         return self.sets
+
+    @staticmethod
+    def calculate_fuzzyset_membership(x, params):
+        micro_cluster = params[0]
+
+        (num_samples, mean, variance, norm_ecc) = EvolvingClustering.get_updated_micro_cluster_values(x, micro_cluster["num_samples"],
+                                                                                                         micro_cluster["mean"],
+                                                                                                         micro_cluster["variance"])
+        norm_tip = 1 - norm_ecc
+
+        return norm_tip
 
     @staticmethod
     def get_macro_cluster_centroid(micro_clusters):

@@ -111,11 +111,11 @@ class EvolvingClusterFTS(fts.FTS):
 
     def fuzzyfication(self, x):
         memberships = np.zeros(len(self.partitioner.ordered_sets))
-        i = 0
         fuzzy_sequence = []
-        for key in self.partitioner.ordered_sets:
-            memberships[i] = self.sets[key].membership(x)
-            i += 1
+
+        for i, key in enumerate(self.partitioner.ordered_sets):
+            m = self.sets[key].membership(x)
+            memberships[i] = m
 
         if self.t_norm == 'threshold':
             # sorting memberships
