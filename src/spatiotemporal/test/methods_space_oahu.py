@@ -6,6 +6,7 @@ from pyFTS.models.multivariate import granular
 from pyFTS.partitioners import Grid, Entropy
 from pyFTS.models.multivariate import variable
 from pyFTS.common import Membership
+from spatiotemporal.models.clusteredmvfts.fts import evolvingclusterfts
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -297,6 +298,7 @@ def granular_forecast(train_df, test_df, params):
     return forecast[_output].values
 
 ############# Granular FTS ##############
+
 
 ############# Persistence ##############
 

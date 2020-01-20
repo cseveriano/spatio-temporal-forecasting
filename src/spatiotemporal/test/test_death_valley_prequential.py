@@ -134,7 +134,7 @@ fbem_fcst = []
 
 ############# CREATE METHODS ############################
 
-evolving = evolvingclusterfts.EvolvingClusterFTS(t_norm='nonzero', defuzzy='weighted', variance_limit=0.001)
+evolving = evolvingclusterfts.EvolvingClusterFTS(defuzzy='weighted', variance_limit=0.001)
 data_input = df.iloc[:,:_order].values
 data_output = df.iloc[:,-1].values
 
@@ -161,8 +161,8 @@ while test_end < limit:
         accumulated_error += fading_factor * error
         evolving_error_list.append(error)
 
-#        plt.plot(y, 'k-', label="Expected output")
-#        plt.plot(y_hat, 'b-', label="Predicted output")
+        plt.plot(y, 'k-', label="Expected output")
+        plt.plot(y_hat, 'b-', label="Predicted output")
 
         ######################
 
