@@ -155,6 +155,13 @@ class EvolvingClusterFTS(fts.FTS):
 
         self.generate_flrg(data)
 
+    def fit(self, ndata, **kwargs):
+
+        if 'order' in kwargs:
+            self.order = kwargs.pop('order')
+
+        super().fit(ndata, num_batches=None)
+
     def forecast(self, ndata, **kwargs):
         ret = []
 

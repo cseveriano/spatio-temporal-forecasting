@@ -1,7 +1,7 @@
 import pandas as pd
 
 def resample_data(df, frequency):
-  return df.resample(frequency, how='mean').bfill()
+    return df.resample(frequency, how='mean')
 
 
 def train_test_split(df, training_length, mode="sample"):

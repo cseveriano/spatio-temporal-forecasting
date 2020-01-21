@@ -3,6 +3,7 @@ from sklearn.cluster import MeanShift, estimate_bandwidth
 import pandas as pd
 import glob
 from pathlib import Path
+from spatiotemporal.util import sampling
 
 def load_data_nrel(path, resampling=None):
     ## some resampling options: 'H' - hourly, '15min' - 15 minutes, 'M' - montlhy
@@ -95,8 +96,14 @@ def normalize_data(df):
     return (df-mindf)/(maxdf-mindf)
 
 
-def load_oahu_hinkelman_days(normalize=True, zenith_angle=80):
+def load_oahu_hinkelman_days(normalize=True, zenith_angle=80, resampling=None):
     hink_raw_df = pd.read_csv('https://query.data.world/s/4is4okebsk5vi2ok5utiwyhmdlko7n', parse_dates=['Time'],index_col=0)
+
+    if resampling:
+        res_df = pd.DataFrame(columns=hink_raw_df.columns)
+        for dt in pd.unique(hink_raw_df.index.date):
+            res_df = res_df.append(sampling.resample_data(hink_raw_df[str(dt)], resampling))
+        hink_raw_df = res_df
 
     if normalize:
         hink_raw_df = normalize_data(hink_raw_df)
@@ -107,11 +114,18 @@ def load_oahu_hinkelman_days(normalize=True, zenith_angle=80):
 
     return hink_raw_df
 
-def load_oahu_hinkelman_days_clear_sky(normalize=True, zenith_angle=80):
+def load_oahu_hinkelman_days_clear_sky(normalize=True, zenith_angle=80, resampling=None):
     hink_cs_df = pd.read_csv('https://query.data.world/s/six7uxsdqen6s47qf7m7mzs4r3iz2d',  parse_dates=['Time'], index_col=0)
+
+    if resampling:
+        res_df = pd.DataFrame(columns=hink_cs_df.columns)
+        for dt in pd.unique(hink_cs_df.index.date):
+            res_df = res_df.append(sampling.resample_data(hink_cs_df[str(dt)], resampling))
+        hink_cs_df = res_df
 
     if normalize:
         hink_cs_df = normalize_data(hink_cs_df)
+
 
     if zenith_angle is not None:
         zenith_angle_index = hink_cs_df.zen < 80
