@@ -207,3 +207,11 @@ def load_weather_sao_paulo(normalize=True):
         df = normalize_data(df)
 
     return df
+
+def load_oahu_raw_qualification(normalize=True):
+    df = pd.read_pickle(Path(__file__).resolve().parents[3] / "notebooks/df_oahu.pkl")
+
+    if normalize:
+        df = normalize_data(df)
+
+    return df

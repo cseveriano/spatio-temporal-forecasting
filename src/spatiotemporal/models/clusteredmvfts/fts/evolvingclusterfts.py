@@ -13,35 +13,43 @@ class EvolvingClusterFLRG(flrg.FLRG):
         self.RHS = {}
         self.strlhs = ""
         self.key = None
+        self.count = 0.0
+        self.w = None
 
-    def append_rhs(self, c, **kwargs):
-        if c not in self.RHS:
-            self.RHS[c] = c
+    def append_rhs(self, fset, **kwargs):
+        count = kwargs.get('count',1.0)
+        if fset not in self.RHS:
+            self.RHS[fset] = count
+        else:
+            self.RHS[fset] += count
+        self.count += count
 
     def append_lhs(self, c):
         self.LHS.append(c)
 
-    def __str__(self):
-        tmp = ""
-        for c in sorted(self.RHS):
-            if len(tmp) > 0:
-                tmp = tmp + ","
-            tmp = tmp + c
-        return self.get_key() + " -> " + tmp
+    def weights(self):
+        if self.w is None:
+            self.w = np.array([self.RHS[c] / self.count for c in self.RHS.keys()])
+        return self.w
 
+    def __str__(self):
+        _str = ""
+        for k in self.RHS.keys():
+            _str += ", " if len(_str) > 0 else ""
+            _str += k + " (" + str(round(self.RHS[k] / self.count, 3)) + ")"
+
+        return self.get_key() + " -> " + _str
 
     def __len__(self):
         return len(self.RHS)
 
     def get_midpoint(self, sets):
-        """
-        Returns the midpoint value for the RHS fuzzy sets
-
-        :param sets: fuzzy sets
-        :return: the midpoint value
-        """
         if self.midpoint is None:
-            self.midpoint = np.nanmean(self.get_midpoints(sets), axis=0)
+            mps = np.array([sets[c].centroid for c in self.RHS.keys()])
+            ws = self.weights()
+            mv_midps = [x * y for x, y in zip(mps, ws)]
+            self.midpoint = np.nansum(mv_midps, axis=0)
+
         return self.midpoint
 
 
@@ -162,13 +170,27 @@ class EvolvingClusterFTS(fts.FTS):
 
         super().fit(ndata, num_batches=None)
 
+    def predict(self, data, **kwargs):
+        result = []
+        l = len(data)
+
+        if l <= self.order:
+            return data
+
+        for k in np.arange(self.order, l+1):
+            sample = data[k - self.order: k]
+            self.fit(sample)
+            result.extend(super().predict(sample, **kwargs))
+
+        return result
+
     def forecast(self, ndata, **kwargs):
         ret = []
 
         l = len(ndata)
 
-        if l <= self.order:
-            return ndata
+#        if l <= self.order:
+#            return ndata
 
         for k in np.arange(self.order, l+1):
             sample = ndata[k - self.order: k]

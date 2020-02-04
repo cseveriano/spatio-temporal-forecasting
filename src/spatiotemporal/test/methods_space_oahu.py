@@ -170,40 +170,41 @@ def mlp_forecast(train_df, test_df, params):
 ############# MultiLayer Perceptron ##############
 
 
-############# Clustered Multivariate FTS ##############
+############# Evolving Cluster FTS ##############
 
 from spatiotemporal.models.clusteredmvfts.fts import cmvhofts
 from spatiotemporal.models.clusteredmvfts.partitioner import EvolvingClusteringPartitioner
 
-cmvfts_space = {
-        'variance_limit': hp.choice('variance_limit', [0.1, 0.001, 0.0001]),
-        't_norm': hp.choice('t_norm', ['threshold', 'nonzero']),
+evolvingfts_space = {
+        'variance_limit': hp.choice('variance_limit', [0.1, 0.05, 0.001, 0.005]),
         'defuzzy': hp.choice('defuzzy', ['weighted', 'mean']),
+        't_norm': hp.choice('t_norm', ['threshold', 'nonzero']),
+        'membership_threshold': hp.choice('membership_threshold', [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6]),
         'order': hp.choice('order', [1,2, 4, 8]),
-        'input': hp.choice('input', [['DH3', 'DH4','DH5','DH10','DH11','DH9','DH2', 'DH6','DH7','DH8']]),
-        'output': hp.choice('output', ['DH3'])}
+        'input': hp.choice('input', [['DH4', 'DH5','DH6' ]]),
+        'output': hp.choice('output', ['DH4'])}
 
 
-def cmvfts_forecast(train_df, test_df, params):
+def evolvingfts_forecast(train_df, test_df, params):
 
     _variance_limit = params['variance_limit']
-    _t_norm = params['t_norm']
     _defuzzy = params['defuzzy']
+    _t_norm = params['t_norm']
+    _membership_threshold = params.get('membership_threshold',0.6)
     _order = params['order']
     _input = list(params['input'])
     _output = params['output']
     _step = params.get('step',1)
+    model = evolvingclusterfts.EvolvingClusterFTS(variance_limit=_variance_limit, defuzzy=_defuzzy, t_norm=_t_norm,
+                                                  membership_threshold=_membership_threshold)
 
-    fuzzy_sets = EvolvingClusteringPartitioner.EvolvingClusteringPartitioner(data=train_df[_input],
-                                                                             variance_limit=_variance_limit, debug=False)
-    model = cmvhofts.ClusteredMultivariateHighOrderFTS(t_norm=_t_norm, defuzzy=_defuzzy)
-    model.fit(train_df[_input].values, order=_order, partitioner=fuzzy_sets, verbose=False)
+    model.fit(train_df[_input].values, order=_order, verbose=False)
     forecast = model.predict(test_df[_input].values, steps_ahead=_step)
 
     forecast_df = pd.DataFrame(data=forecast, columns=test_df[_input].columns)
     return forecast_df[_output].values[:-1]
 
-############# Clustered Multivariate FTS ##############
+############# Evolving Cluster FTS ##############
 
 
 ############# Fuzzy CNN ##############
