@@ -3,7 +3,8 @@ from setuptools import setup, find_packages
 setup(
     name='spatio-temporal-forecasting',
     packages=['spatiotemporal', 'spatiotemporal.models', 'spatiotemporal.models.clusteredmvfts','spatiotemporal.models.clusteredmvfts.fts', 'spatiotemporal.models.clusteredmvfts.partitioner', 'spatiotemporal.data',
-	'spatiotemporal.models.benchmarks',
+	'spatiotemporal.models.benchmarks', 'spatiotemporal.models.benchmarks.fbem',
+	'spatiotemporal.models.benchmarks.granularfts','spatiotemporal.models.benchmarks.mvfts',
 	'spatiotemporal.features', 'spatiotemporal.test', 'spatiotemporal.util', 'spatiotemporal.visualization'],
 	package_dir={'spatiotemporal': 'src/spatiotemporal'},
     version='1.0',
