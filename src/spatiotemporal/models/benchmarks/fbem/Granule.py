@@ -1,6 +1,6 @@
 import numpy as np
 import copy
-from fbem.utils import *
+from .utils import *
 
 class Granule:
     def __init__(self):

@@ -2,10 +2,10 @@ import numpy as np
 import operator as op
 import copy
 
-from fbem.Granule import Granule
-from fbem.iGranule import iGranule
-from fbem.oGranule import oGranule
-from fbem.utils import *
+from .Granule import Granule
+from .iGranule import iGranule
+from .oGranule import oGranule
+from .utils import *
 
 class FBeM:
     """
