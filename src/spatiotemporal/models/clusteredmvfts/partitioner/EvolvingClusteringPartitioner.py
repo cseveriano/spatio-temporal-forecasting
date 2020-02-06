@@ -26,9 +26,9 @@ class EvolvingClusteringPartitioner(partitioner.Partitioner):
         self.clusterer.fit(data, update_macro_clusters=update_mc, prune_micro_clusters=False)
 
         if not self.sets:
-            micro_clusters = self.clusterer.get_all_active_micro_clusters()
+            micro_clusters = self.clusterer.micro_clusters
         else:
-            micro_clusters = self.clusterer.get_changed_active_micro_clusters()
+            micro_clusters = self.clusterer.get_changed_micro_clusters()
 
         for m in micro_clusters:
             _name = "C" + '{:03}'.format(m['id'])
