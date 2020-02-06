@@ -61,6 +61,7 @@ class EvolvingClusterFTS(fts.FTS):
         self.name = "Evolving Cluster FTS"
         self.shortname = "EvolvingClusterFTS"
         self.detail = "Severiano"
+        self.uod_clip = False
         self.setsDict = {}
         self.is_high_order = True
         self.membership_threshold = kwargs.get('membership_threshold',0.6)
