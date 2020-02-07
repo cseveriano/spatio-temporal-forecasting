@@ -33,12 +33,12 @@ def mavg(l, order=2):
 
 signal = artificial.SignalEmulator().stationary_gaussian(mu_local, sigma_local, length=deflen, it=10).run()
 
-signals['Stationary signal'] = mavg(signal, order)
+#signals['Stationary signal'] = mavg(signal, order)
 
 signal = artificial.SignalEmulator().stationary_gaussian(mu_local, sigma_local, length=deflen,
                                                          it=10).blip().blip().run()
 
-signals['Stationary signal with blip'] = mavg(signal, order)
+#signals['Stationary signal with blip'] = mavg(signal, order)
 
 signal = artificial.SignalEmulator() \
     .stationary_gaussian(mu_local, sigma_local, length=deflen // 2, it=10) \
@@ -46,12 +46,11 @@ signal = artificial.SignalEmulator() \
     .blip().blip() \
     .run()
 
-signals['Sudden Variance'] = mavg(signal, order)
+#signals['Sudden Variance'] = mavg(signal, order)
 
 signal = artificial.SignalEmulator() \
     .stationary_gaussian(mu_local, sigma_local, length=deflen // 2, it=10) \
     .stationary_gaussian(mu_drift, sigma_local, length=deflen // 2, it=10, additive=False) \
-    .blip().blip() \
     .run()
 
 signals['Sudden Mean'] = mavg(signal, order)
@@ -62,7 +61,7 @@ signal = artificial.SignalEmulator() \
     .blip().blip() \
     .run()
 
-signals['Sudden Mean & Variance'] = mavg(signal, order)
+#signals['Sudden Mean & Variance'] = mavg(signal, order)
 
 signal = artificial.SignalEmulator() \
     .stationary_gaussian(mu_local, sigma_local, length=deflen, it=10) \
@@ -70,7 +69,7 @@ signal = artificial.SignalEmulator() \
     .blip().blip() \
     .run()
 
-signals['Incremental Mean'] = mavg(signal, order)
+#signals['Incremental Mean'] = mavg(signal, order)
 
 signal = artificial.SignalEmulator() \
     .stationary_gaussian(mu_local, sigma_local, length=deflen, it=10) \
@@ -78,7 +77,7 @@ signal = artificial.SignalEmulator() \
     .blip().blip() \
     .run()
 
-signals['Incremental Variance'] = signal
+#signals['Incremental Variance'] = signal
 
 signal = artificial.SignalEmulator() \
     .stationary_gaussian(mu_local, sigma_local, length=deflen, it=10) \
@@ -86,7 +85,7 @@ signal = artificial.SignalEmulator() \
     .blip().blip() \
     .run()
 
-signals['Incremental Mean & Variance'] = mavg(signal, order)
+#signals['Incremental Mean & Variance'] = mavg(signal, order)
 
 
 from spatiotemporal.models.clusteredmvfts.fts import evolvingclusterfts
@@ -96,13 +95,19 @@ from spatiotemporal.models.benchmarks.fbem import FBeM
 from pyFTS.benchmarks import Measures
 from spatiotemporal.data import loader
 
-fig, ax = plt.subplots(nrows=18, ncols=1, figsize=[15,25])
+#plt.show(block=True)
+fig, ax = plt.subplots(nrows=len(signals)+1, ncols=1, figsize=[15,25])
 
 rows = []
 _order = 2
 
 for row, key in enumerate(signals.keys()):
     print('Processing dataset: ', key)
+    s = signals[key]
+    mins = min(s)
+    maxs = max(s)
+    signals[key] = [(s-mins)/(maxs-mins) for s in signals[key]]
+
     df = loader.series_to_supervised(signals[key], n_in=_order, n_out=1)
     data_input = df.iloc[:,:_order].values
     data_output = df.iloc[:,-1].values
@@ -112,8 +117,13 @@ for row, key in enumerate(signals.keys()):
     train = data_input[:limit]
     test = data_input[limit:]
 
-    ax[row].plot(test, label="Original")
+    ax[row].plot(data_output[limit+_order:], label="Original")
     ax[row].set_title(key)
+
+    persistence_forecast = data_output[limit+_order-1:-1]
+    ax[row].plot(persistence_forecast, label="Persistence")
+    _rmse = Measures.rmse(data_output[limit+_order:], persistence_forecast)
+    data = [key, "Persistence", _rmse]
 
     evolving_model = evolvingclusterfts.EvolvingClusterFTS(defuzzy='weighted', membership_threshold=0.6, variance_limit=0.001)
     evolving_model.fit(train, order=_order)
