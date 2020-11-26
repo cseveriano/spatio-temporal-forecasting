@@ -11,8 +11,8 @@ hink_cs_df = hink_cs_df['2010-07-31']
 methods = []
 #methods.append(("HOFTS", ms.hofts_forecast, ms.hofts_space))
 #methods.append(("VAR", ms.var_forecast, ms.var_space))
-#methods.append(("MLP", ms.mlp_forecast, ms.mlp_space))
-methods.append(("EVOLFTS", ms.evolvingfts_forecast, ms.evolvingfts_space))
+methods.append(("MLP", ms.mlp_forecast, ms.mlp_space))
+#methods.append(("EVOLFTS", ms.evolvingfts_forecast, ms.evolvingfts_space))
 #methods.append(("FUZZYCNN", ms.fuzzycnn_forecast, ms.fuzzycnn_space))
 #methods.append(("GRANULAR", ms.granular_forecast, ms.granular_space))
 
