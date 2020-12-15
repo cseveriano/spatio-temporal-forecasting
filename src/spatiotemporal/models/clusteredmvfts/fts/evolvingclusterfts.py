@@ -180,8 +180,8 @@ class EvolvingClusterFTS(fts.FTS):
 
         for k in np.arange(self.order, l+1):
             sample = data[k - self.order: k]
-            result.extend(super().predict(sample, **kwargs))
             self.fit(sample)
+            result.extend(super().predict(sample, **kwargs))
 
         return result
 
