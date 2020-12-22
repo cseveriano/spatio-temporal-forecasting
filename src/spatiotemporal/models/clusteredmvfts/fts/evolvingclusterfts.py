@@ -175,7 +175,7 @@ class EvolvingClusterFTS(fts.FTS):
         result = []
         l = len(data)
 
-        if l <= self.order:
+        if l < self.order:
             return data
 
         for k in np.arange(self.order, l+1):
