@@ -21,7 +21,7 @@ class EvolvingClusteringPartitioner(partitioner.Partitioner):
 
     # Micro clusters as fuzzy sets version
     def build(self, data):
-        update_mc = True
+        update_mc = False
 
         self.clusterer.fit(data, update_macro_clusters=update_mc, prune_micro_clusters=False)
 
